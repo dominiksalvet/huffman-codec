@@ -1,0 +1,6 @@
+Soubory s priponou RAW jsou surova 8-bitova data 512x512 pixelu, tj. celkem 262 144 B, pripravena tak, aby bylo mozne jednoduse nacist pomoci jednoho fread v C/C++.
+
+Zobrazit je mozne napr. na http://rawpixels.net/ pokud se pouzije nastaveni:
+Width: 512
+Height: 512
+Predefined format: Grayscale 8-bit
