@@ -20,11 +20,17 @@ const string HELP_MESSAGE =
 "\n"
 "OPTION:\n"
 "  -c/-d  perform compression/decompression\n"
-"  -m     use model for data preprocessing\n"
+"  -m     use model for image preprocessing\n"
 "  -a     use adaptive scanning\n"
 "  -i/-o  input/output file path\n"
 "  -w     used image width\n"
 "  -h     show this help\n";
+
+// redirect input to stderr, but also print a help hint
+void cerrh(const char *s)
+{
+    cerr << s << "try 'huff_codec -h' for more information\n";
+}
 
 // transform pixel values to their differences
 void diff_model(vector<int16_t> &vec)
@@ -38,17 +44,54 @@ void diff_model(vector<int16_t> &vec)
     }
 }
 
-// redirect input to stderr, but also print a help hint
-void cerrh(const char *s)
+// compress image based on several given options
+vector<uint8_t> compress(
+    ifstream& ifs,
+    bool use_model,
+    bool adapt_scan,
+    int32_t img_width)
 {
-    cerr << s << "try 'huff_codec -h' for more information\n";
+    // load input file to internal representation vector
+    vector<int16_t> idata; // 16 bits for sure
+    int c;
+    while ((c = ifs.get()) != EOF)
+        idata.push_back(c); // implicit conversion
+    ifs.close();
+
+    // derive image height
+    if ((idata.size() % img_width) != 0)
+    {
+        cerr << "ERROR: unable to determine integer image height\n";
+        exit(7);
+    }
+    int32_t img_height = idata.size() / img_width;
+
+    if (use_model)
+        diff_model(idata);
+
+    vector<uint8_t> a;
+    return a;
+}
+
+// decompress image of the given input stream
+vector<uint8_t> decompress(ifstream& ifs)
+{
+    // load input file to internal representation vector
+    vector<uint8_t> idata; // byte by byte
+    int c;
+    while ((c = ifs.get()) != EOF)
+        idata.push_back(c);
+    ifs.close();
+
+    vector<uint8_t> a;
+    return a;
 }
 
 // entry point of program
 int main(int argc, char *argv[])
 {
     // default setup
-    bool compress = true;
+    bool use_compr = true;
     bool use_model = false;
     bool adapt_scan = false;
 
@@ -62,8 +105,8 @@ int main(int argc, char *argv[])
     {
         switch (opt)
         {
-        case 'c': compress = true; break;
-        case 'd': compress = false; break;
+        case 'c': use_compr = true; break;
+        case 'd': use_compr = false; break;
         case 'm': use_model = true; break;
         case 'a': adapt_scan = true; break;
         case 'i': ifp = optarg; break;
@@ -71,16 +114,13 @@ int main(int argc, char *argv[])
         case 'w': img_width = stoi(optarg); break;
         case 'h':
             cout << HELP_MESSAGE;
-            return 0;
-            break;
+            return 0; break;
         case ':':
             cerrh("ERROR: missing additional argument\n");
-            return 1;
-            break;
+            return 1; break;
         case '?':
             cerrh("ERROR: unrecognized option used\n");
-            return 2;
-            break;
+            return 2; break;
         }
     }
 
@@ -109,27 +149,12 @@ int main(int argc, char *argv[])
         return 6;
     }
 
-    // load input file to internal representation vector
-    vector<int16_t> raw_data;
-    int c;
-    while ((c = ifs.get()) != EOF)
-        raw_data.push_back(c); // implicit conversion
-    ifs.close();
-
-    // derive image height
-    if ((raw_data.size() % img_width) != 0)
-    {
-        cerr << "ERROR: unable to determine integer image height\n";
-        return 7;
-    }
-    int32_t img_height = raw_data.size() / img_width;
-
-    if (use_model)
-        diff_model(raw_data);
-
-    for (int16_t c : raw_data)
-    {
-        cout << c << ", ";
-    }
-    cout << "\n";
+    // perform required operation
+    vector<uint8_t> odata; // alway array of bytes
+    if (use_compr)
+        odata = compress(ifs, use_model, adapt_scan, img_width);
+    else
+        odata = decompress(ifs);
+    
+    // TODO: write to output file
 }
