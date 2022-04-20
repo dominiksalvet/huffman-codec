@@ -13,4 +13,4 @@ huff_codec: $(SRC_FILES)
 	g++ -Wall -o $@ $^
 
 clean:
-	rm -f huff_codec
+	rm -f huff_codec a.out
