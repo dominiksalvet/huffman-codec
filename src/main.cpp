@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -24,6 +25,18 @@ const string HELP_MESSAGE =
 "  -i/-o  input/output file path\n"
 "  -w     used image width\n"
 "  -h     show this help\n";
+
+// transform pixel values to their differences
+void diff_model(vector<int16_t> &vec)
+{
+    int16_t prev_val = 0;
+    for (size_t i = 0; i < vec.size(); i++)
+    {
+        int16_t cur_val = vec[i];
+        vec[i] = cur_val - prev_val;
+        prev_val = cur_val;
+    }
+}
 
 // redirect input to stderr, but also print a help hint
 void cerrh(const char *s)
@@ -95,14 +108,28 @@ int main(int argc, char *argv[])
         cerr << "ERROR: given input file does not exist\n";
         return 6;
     }
-    stringstream buf; buf << ifs.rdbuf();
-    string ifc = buf.str(); // input file contents
+
+    // load input file to internal representation vector
+    vector<int16_t> raw_data;
+    int c;
+    while ((c = ifs.get()) != EOF)
+        raw_data.push_back(c); // implicit conversion
+    ifs.close();
 
     // derive image height
-    if ((ifc.length() % img_width) != 0)
+    if ((raw_data.size() % img_width) != 0)
     {
         cerr << "ERROR: unable to determine integer image height\n";
         return 7;
     }
-    int32_t img_height = ifc.length() / img_width;
+    int32_t img_height = raw_data.size() / img_width;
+
+    if (use_model)
+        diff_model(raw_data);
+
+    for (int16_t c : raw_data)
+    {
+        cout << c << ", ";
+    }
+    cout << "\n";
 }
