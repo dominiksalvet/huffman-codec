@@ -15,8 +15,8 @@ using namespace std;
 
 const string HELP_MESSAGE =
 "USAGE:\n"
-"  huff_codec [-c] [-m] [-a] -i IFILE -o OFILE -w WIDTH\n"
-"  huff_codec -d -i IFILE -o OFILE -w WIDTH | -h\n"
+"  huff_codec [-cma] -w WIDTH -i IFILE [-o OFILE]\n"
+"  huff_codec -d -i IFILE [-o OFILE] | -h\n"
 "\n"
 "OPTION:\n"
 "  -c/-d  perform compression/decompression\n"
@@ -62,19 +62,22 @@ vector<uint8_t> compress(
     if ((idata.size() % img_width) != 0)
     {
         cerr << "ERROR: unable to determine integer image height\n";
-        exit(7);
+        exit(6);
     }
     int32_t img_height = idata.size() / img_width;
 
     if (use_model)
         diff_model(idata);
 
+    // TODO: return real data
     vector<uint8_t> a;
+    for (int16_t item : idata)
+        a.push_back(abs(item));
     return a;
 }
 
 // decompress image of the given input stream
-vector<uint8_t> decompress(ifstream& ifs)
+vector<uint8_t> decompress(ifstream &ifs)
 {
     // load input file to internal representation vector
     vector<uint8_t> idata; // byte by byte
@@ -83,8 +86,21 @@ vector<uint8_t> decompress(ifstream& ifs)
         idata.push_back(c);
     ifs.close();
 
-    vector<uint8_t> a;
-    return a;
+    return idata; // TODO: return real data
+}
+
+// write final data from vector to given output file path
+void write_odata(vector<uint8_t> &vec, const string &ofp)
+{
+    ofstream ofs(ofp, ios::out | ios::binary); // output file stream
+    if (ofs.fail())
+    {
+        cerr << "ERROR: cannot write to " << ofp << " output file\n";
+        exit(7);
+    }
+
+    ofs.write((char *) vec.data(), vec.size());
+    ofs.close();
 }
 
 // entry point of program
@@ -95,8 +111,8 @@ int main(int argc, char *argv[])
     bool use_model = false;
     bool adapt_scan = false;
 
-    string ifp; // input file path
-    string ofp; // empty by default constructor
+    string ifp; // input file path (empty by default constructor)
+    string ofp = "a.out"; // some default path
     int32_t img_width = 0;
 
     // argument processing
@@ -130,23 +146,18 @@ int main(int argc, char *argv[])
         cerrh("ERROR: no input file path provided\n");
         return 3;
     }
-    if (ofp.empty())
-    {
-        cerrh("ERROR: no output file path provided\n");
-        return 4;
-    }
-    if (img_width <= 0)
+    if (use_compr && img_width <= 0)
     {
         cerrh("ERROR: invalid or missing image width\n");
-        return 5;
+        return 4;
     }
 
     // reading input file
-    ifstream ifs(ifp, ios::binary); // input file stream
+    ifstream ifs(ifp, ios::in | ios::binary); // input file stream
     if (ifs.fail())
     {
         cerr << "ERROR: given input file does not exist\n";
-        return 6;
+        return 5;
     }
 
     // perform required operation
@@ -156,5 +167,5 @@ int main(int argc, char *argv[])
     else
         odata = decompress(ifs);
     
-    // TODO: write to output file
+    write_odata(odata, ofp);
 }
