@@ -29,9 +29,9 @@ public:
     ~HuffTree();
 
     // encode given byte based on current tree
-    vector<bool> encode(uint8_t b);
-    // decode given binary string to byte
-    uint8_t decode(vector<bool> b);
+    vector<bool> encode(uint8_t byteData);
+    // decode given binary vector to byte
+    uint8_t decode(vector<bool> huffData);
     // update internal Huffman tree based on given byte
-    void update(uint8_t b);
+    void update(uint8_t byteData);
 };

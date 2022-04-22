@@ -33,45 +33,45 @@ void cerrh(const char *s)
 }
 
 // transform pixel values to their differences (in situ)
-void diff_model(vector<int16_t> &vec)
+void applyDiffModel(vector<int16_t> &vec)
 {
-    int16_t prev_val = 0;
+    int16_t prevVal = 0;
     for (size_t i = 0; i < vec.size(); i++)
     {
-        int16_t cur_val = vec[i];
-        vec[i] = cur_val - prev_val;
-        prev_val = cur_val;
+        int16_t curVal = vec[i];
+        vec[i] = curVal - prevVal;
+        prevVal = curVal;
     }
 }
 
 // compress image based on several given options
 vector<uint8_t> compress(
     ifstream& ifs,
-    bool use_model,
-    bool adapt_scan,
-    int32_t img_width)
+    bool useModel,
+    bool adaptScan,
+    int32_t imgWidth)
 {
     // load input file to internal representation vector
-    vector<int16_t> idata; // 16 bits for sure
+    vector<int16_t> inData; // 16 bits for sure
     int c;
     while ((c = ifs.get()) != EOF)
-        idata.push_back(c); // implicit conversion
+        inData.push_back(c); // implicit conversion
     ifs.close();
 
     // derive image height
-    if ((idata.size() % img_width) != 0)
+    if ((inData.size() % imgWidth) != 0)
     {
         cerr << "ERROR: unable to determine integer image height\n";
         exit(6);
     }
-    int32_t img_height = idata.size() / img_width;
+    int32_t imgHeight = inData.size() / imgWidth;
 
-    if (use_model)
-        diff_model(idata);
+    if (useModel)
+        applyDiffModel(inData);
 
     // TODO: return real data
     vector<uint8_t> a;
-    for (int16_t item : idata)
+    for (int16_t item : inData)
         a.push_back(abs(item));
     return a;
 }
@@ -80,17 +80,17 @@ vector<uint8_t> compress(
 vector<uint8_t> decompress(ifstream &ifs)
 {
     // load input file to internal representation vector
-    vector<uint8_t> idata; // byte by byte
+    vector<uint8_t> inData; // byte by byte
     int c;
     while ((c = ifs.get()) != EOF)
-        idata.push_back(c);
+        inData.push_back(c);
     ifs.close();
 
-    return idata; // TODO: return real data
+    return inData; // TODO: return real data
 }
 
 // write final data from vector to given output file path
-void write_odata(vector<uint8_t> &vec, const string &ofp)
+void writeOutData(vector<uint8_t> &vec, const string &ofp)
 {
     ofstream ofs(ofp, ios::out | ios::binary); // output file stream
     if (ofs.fail())
@@ -107,13 +107,13 @@ void write_odata(vector<uint8_t> &vec, const string &ofp)
 int main(int argc, char *argv[])
 {
     // default setup
-    bool use_compr = true;
-    bool use_model = false;
-    bool adapt_scan = false;
+    bool useCompr = true;
+    bool useModel = false;
+    bool adaptScan = false;
 
     string ifp; // input file path (empty by default constructor)
     string ofp = "a.out"; // some default path
-    int32_t img_width = 0;
+    int32_t imgWidth = 0;
 
     // argument processing
     int opt;
@@ -121,13 +121,13 @@ int main(int argc, char *argv[])
     {
         switch (opt)
         {
-        case 'c': use_compr = true; break;
-        case 'd': use_compr = false; break;
-        case 'm': use_model = true; break;
-        case 'a': adapt_scan = true; break;
+        case 'c': useCompr = true; break;
+        case 'd': useCompr = false; break;
+        case 'm': useModel = true; break;
+        case 'a': adaptScan = true; break;
         case 'i': ifp = optarg; break;
         case 'o': ofp = optarg; break;
-        case 'w': img_width = stoi(optarg); break;
+        case 'w': imgWidth = stoi(optarg); break;
         case 'h':
             cout << HELP_MESSAGE;
             return 0; break;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
         cerrh("ERROR: no input file path provided\n");
         return 3;
     }
-    if (use_compr && img_width <= 0)
+    if (useCompr && imgWidth <= 0)
     {
         cerrh("ERROR: invalid or missing image width\n");
         return 4;
@@ -162,10 +162,10 @@ int main(int argc, char *argv[])
 
     // perform required operation
     vector<uint8_t> odata; // alway array of bytes
-    if (use_compr)
-        odata = compress(ifs, use_model, adapt_scan, img_width);
+    if (useCompr)
+        odata = compress(ifs, useModel, adaptScan, imgWidth);
     else
         odata = decompress(ifs);
     
-    write_odata(odata, ofp);
+    writeOutData(odata, ofp);
 }

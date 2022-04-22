@@ -16,17 +16,17 @@ HuffTree::~HuffTree()
 
 }
 
-vector<bool> HuffTree::encode(uint8_t b)
+vector<bool> HuffTree::encode(uint8_t byteData)
 {
 
 }
 
-uint8_t HuffTree::decode(vector<bool> b)
+uint8_t HuffTree::decode(vector<bool> huffData)
 {
 
 }
 
-void HuffTree::update(uint8_t b)
+void HuffTree::update(uint8_t byteData)
 {
     
 }
