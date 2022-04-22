@@ -32,7 +32,7 @@ void cerrh(const char *s)
     cerr << s << "try 'huff_codec -h' for more information\n";
 }
 
-// transform pixel values to their differences
+// transform pixel values to their differences (in situ)
 void diff_model(vector<int16_t> &vec)
 {
     int16_t prev_val = 0;
