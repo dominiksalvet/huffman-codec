@@ -11,10 +11,13 @@
 
 using std::vector;
 
-struct Node
+struct HuffNode
 {
-    Node *parent;
-    Node *left, *right;
+    uint8_t data;
+    // NYT exclusively has freq=0
+    uint32_t freq; // max 4 GB of data per one tree
+    HuffNode *parent;
+    HuffNode *left, *right;
 };
 
 class HuffTree
