@@ -13,18 +13,20 @@ using std::vector;
 
 struct HuffNode
 {
-    uint8_t data;
+    uint8_t data; // for leaf nodes
     // NYT exclusively has freq=0
     uint32_t freq; // max 4 GB of data per one tree
-    HuffNode *parent;
+    HuffNode *parent; // for sum propagation
     HuffNode *left, *right;
 };
+
+bool isLeaf(const HuffNode &node);
 
 class HuffTree
 {
 public:
     // initialize the Huffman tree
-    HuffTree();
+    HuffTree(uint8_t firstByteData);
     // clean-up the tree
     ~HuffTree();
 
@@ -34,4 +36,10 @@ public:
     uint8_t decode(vector<bool> huffData);
     // update internal Huffman tree based on given byte
     void update(uint8_t byteData);
+
+private:
+    HuffNode *root;
+
+    // clean-up resources of the given node
+    void deleteNode(const HuffNode *node);
 };
