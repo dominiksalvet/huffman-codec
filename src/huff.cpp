@@ -33,7 +33,7 @@ HuffTree::HuffTree(bool useDiffSymbols)
     int realMaxSymbols = useDiffSymbols ? 2 * MAX_SYMBOLS : MAX_SYMBOLS;
 
     // NYT is not included in the symbols alphabet (hence this formula)
-    uint16_t firstNodeNum = 2 * realMaxSymbols + 1;
+    uint16_t firstNodeNum = 2 * realMaxSymbols; // include 0 as number
     // create tree with NYT node only
     this->root = new HuffNode{firstNodeNum, 0, 0, nullptr, nullptr, nullptr};
 
@@ -103,6 +103,30 @@ void HuffTree::update(uint16_t symbol)
 }
 
 // -------------------------- PRIVATE ------------------------------------------
+
+void swapNodes(HuffNode *const node1, HuffNode *const node2)
+{
+    // swap nodes number (since that does not change when swapping nodes)
+    uint16_t node1Num = node1->nodeNum;
+    node1->nodeNum = node2->nodeNum;
+    node2->nodeNum = node1Num;
+
+    if (node1->parent->left == node1) {
+        node1->parent->left = node2;
+    } else {
+        node1->parent->right = node2;
+    }
+
+    if (node2->parent->left == node2) {
+        node2->parent->left = node1;
+    } else {
+        node2->parent->right = node1;
+    }
+
+    HuffNode *node1Parent = node1->parent;
+    node1->parent = node2->parent;
+    node2->parent = node1Parent;
+}
 
 void HuffTree::deleteNode(const HuffNode *node)
 {

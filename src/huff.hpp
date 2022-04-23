@@ -65,6 +65,8 @@ private:
     // nevertheless, it has no effect on the final result
     vector<bool> codes[2 * MAX_SYMBOLS];
     
+    // swap two given nodes (must not be called on the root node)
+    void swapNodes(HuffNode *const node1, HuffNode *const node2);
     // clean-up resources of the given node
     void deleteNode(const HuffNode *node);
 };
