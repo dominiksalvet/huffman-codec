@@ -13,3 +13,4 @@
 * `[ ]` odevzdava se kko_xsalve03.zip se zdrojakama, Makefile a PDF dokumentaci
 * `[ ]` pouzivani `[u]int<x>_t` datovych typu (sys/types.h)
 * `[ ]` pripadny debug valgrind (make debug target, DataDisplayDebugger)
+* `[ ]` use file header when compression/decompression
