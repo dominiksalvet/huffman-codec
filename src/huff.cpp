@@ -7,22 +7,14 @@
 #include "huff.hpp"
 
 #include <climits>
+#include <algorithm>
 
+using std::reverse;
 
 bool isLeaf(const HuffNode *node)
 {
     // no need to check the other child for Huffman FGK tree
     return node->left == nullptr;
-}
-
-bool isRoot(const HuffNode *node)
-{
-    return node->parent == nullptr;
-}
-
-bool isNYTNode(const HuffNode *node)
-{
-    return node->freq == 0;
 }
 
 // -------------------------- PUBLIC -------------------------------------------
@@ -35,7 +27,8 @@ HuffTree::HuffTree(bool useDiffSymbols)
     // NYT is not included in the symbols alphabet (hence this formula)
     uint16_t firstNodeNum = 2 * realMaxSymbols; // include 0 as number
     // create tree with NYT node only
-    this->root = new HuffNode{firstNodeNum, 0, 0, nullptr, nullptr, nullptr};
+    root = new HuffNode{firstNodeNum, 0, 0, nullptr, nullptr, nullptr};
+    nodeNYT = root;
 
     // we consider only platforms where memory is addressable by bytes (8 bits)
     bitsInSymbol = useDiffSymbols ? CHAR_BIT + 1 : CHAR_BIT;
@@ -43,23 +36,27 @@ HuffTree::HuffTree(bool useDiffSymbols)
 
 HuffTree::~HuffTree()
 {
-    deleteNode(this->root);
+    deleteNode(root);
 }
 
 vector<bool> HuffTree::encode(uint16_t symbol)
 {
-    vector<bool> code = codes[symbol];
+    vector<bool> code;
+    HuffNode *symbolNode = symbolNodes[symbol];
 
-    if (code.empty()) // no code existing => not yet transmitted
+    if (symbolNode == nullptr) // no symbol existing => not yet transmitted
     {
-        code = codeNYT; // we must start with NYT code
+        code = nodeToCode(nodeNYT); // we must start with NYT code
 
-        // symbol to boolean vector conversion
+        // current symbol to boolean vector conversion
         for (int i = 0; i < bitsInSymbol; i++)
         {
             bool curBit = (symbol >> (bitsInSymbol - i - 1)) & 0x01;
             code.push_back(curBit);
         }
+    }
+    else {
+        code = nodeToCode(symbolNode);
     }
 
     return code;
@@ -67,7 +64,7 @@ vector<bool> HuffTree::encode(uint16_t symbol)
 
 int HuffTree::decode(queue<bool> &code)
 {
-    HuffNode *curNode = this->root;
+    HuffNode *curNode = root;
     while (!isLeaf(curNode))
     {
         if (code.empty()) {
@@ -80,7 +77,7 @@ int HuffTree::decode(queue<bool> &code)
     }
 
     uint16_t finalSymbol = 0;
-    if (isNYTNode(curNode))
+    if (curNode == nodeNYT)
     {
         for (int i = 0; i < bitsInSymbol; i++)
         {
@@ -104,7 +101,28 @@ void HuffTree::update(uint16_t symbol)
 
 // -------------------------- PRIVATE ------------------------------------------
 
-void swapNodes(HuffNode *const node1, HuffNode *const node2)
+vector<bool> HuffTree::nodeToCode(HuffNode *const node)
+{
+    vector<bool> code;
+
+    HuffNode *curNode = node;
+    while(curNode != root) // up to the root
+    {
+        // add bits incrementally
+        if (curNode->parent->left == curNode) {
+            code.push_back(0);
+        } else {
+            code.push_back(1);
+        }
+        curNode = curNode->parent;
+    }
+
+    // the received code is in the reverse order
+    reverse(code.begin(), code.end());
+    return code;
+}
+
+void HuffTree::swapNodes(HuffNode *const node1, HuffNode *const node2)
 {
     // swap nodes number (since that does not change when swapping nodes)
     uint16_t node1Num = node1->nodeNum;

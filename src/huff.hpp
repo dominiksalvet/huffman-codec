@@ -29,10 +29,6 @@ struct HuffNode
 
 // check if the given node is a leaf node
 bool isLeaf(const HuffNode *node);
-// check whether the given node is root
-bool isRoot(const HuffNode *node);
-// check whether the given node is NYT
-bool isNYTNode(const HuffNode *node);
 
 
 // symbol is something to be encoded
@@ -57,14 +53,16 @@ public:
 
 private:
     HuffNode *root;
-    int bitsInSymbol; // number of bits in one symbol
-
-    // these vectors are initialized as empty
-    vector<bool> codeNYT; // code of NYT node
-    // codes of symbols, some may be unsed when diff model is not used
-    // nevertheless, it has no effect on the final result
-    vector<bool> codes[2 * MAX_SYMBOLS];
+    HuffNode *nodeNYT;
     
+    // pointers to symbol nodes, some may be unsed when diff model is not used
+    // nevertheless, it has no effect on the final result
+    HuffNode *symbolNodes[2 * MAX_SYMBOLS] = {}; // initialized with nullptrs
+    
+    int bitsInSymbol; // number of bits in one symbol
+    
+    // go through the tree up to the root to provide the code of the node symbol
+    vector<bool> nodeToCode(HuffNode *const node);
     // swap two given nodes (must not be called on the root node)
     void swapNodes(HuffNode *const node1, HuffNode *const node2);
     // clean-up resources of the given node
