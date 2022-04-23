@@ -11,6 +11,8 @@
 #include <sstream>
 #include <vector>
 
+#include "huff.hpp"
+
 using namespace std;
 
 const string HELP_MESSAGE =
@@ -161,11 +163,11 @@ int main(int argc, char *argv[])
     }
 
     // perform required operation
-    vector<uint8_t> odata; // alway array of bytes
+    vector<uint8_t> outData; // alway array of bytes
     if (useCompr)
-        odata = compress(ifs, useModel, adaptScan, imgWidth);
+        outData = compress(ifs, useModel, adaptScan, imgWidth);
     else
-        odata = decompress(ifs);
+        outData = decompress(ifs);
     
-    writeOutData(odata, ofp);
+    writeOutData(outData, ofp);
 }
