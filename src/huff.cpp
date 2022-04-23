@@ -6,15 +6,18 @@
 
 #include "huff.hpp"
 
+#include <climits>
+
 
 bool isLeaf(const HuffNode *node)
 {
-    return !node->left && !node->right;
+    // no need to check the other child for Huffman FGK tree
+    return node->left == nullptr;
 }
 
 bool isRoot(const HuffNode *node)
 {
-    return !node->parent;
+    return node->parent == nullptr;
 }
 
 bool isNYTNode(const HuffNode *node)
@@ -24,10 +27,18 @@ bool isNYTNode(const HuffNode *node)
 
 // -------------------------- PUBLIC -------------------------------------------
 
-HuffTree::HuffTree()
+HuffTree::HuffTree(bool useDiffSymbols)
 {
-    // initial NYT node
-    this->root = new HuffNode{2 * MAX_SYMBOLS - 1, 0, NYT_INDEX, NULL, NULL, NULL};
+    // there are twice as much symbols when diff model is used
+    int realMaxSymbols = useDiffSymbols ? 2 * MAX_SYMBOLS : MAX_SYMBOLS;
+
+    // NYT is not included in the symbols alphabet (hence this formula)
+    uint16_t firstNodeNum = 2 * realMaxSymbols + 1;
+    // create tree with NYT node only
+    this->root = new HuffNode{firstNodeNum, 0, 0, nullptr, nullptr, nullptr};
+
+    // we consider only platforms where memory is addressable by bytes (8 bits)
+    bitsInSymbol = useDiffSymbols ? CHAR_BIT + 1 : CHAR_BIT;
 }
 
 HuffTree::~HuffTree()
@@ -41,12 +52,12 @@ vector<bool> HuffTree::encode(uint16_t symbol)
 
     if (code.empty()) // no code existing => not yet transmitted
     {
-        code = codes[NYT_INDEX]; // we must start with NYT code
+        code = codeNYT; // we must start with NYT code
 
         // symbol to boolean vector conversion
-        for (int i = 0; i < BITS_IN_SYMBOL; i++)
+        for (int i = 0; i < bitsInSymbol; i++)
         {
-            bool curBit = (symbol >> (BITS_IN_SYMBOL - i - 1)) & 0x01;
+            bool curBit = (symbol >> (bitsInSymbol - i - 1)) & 0x01;
             code.push_back(curBit);
         }
     }
@@ -59,8 +70,9 @@ int HuffTree::decode(queue<bool> &code)
     HuffNode *curNode = this->root;
     while (!isLeaf(curNode))
     {
-        if (code.empty())
+        if (code.empty()) {
             return -1;
+        }
 
         // decision bit to choose the next node
         bool decBit = code.front(); code.pop();
@@ -70,16 +82,17 @@ int HuffTree::decode(queue<bool> &code)
     uint16_t finalSymbol = 0;
     if (isNYTNode(curNode))
     {
-        for (int i = 0; i < BITS_IN_SYMBOL; i++)
+        for (int i = 0; i < bitsInSymbol; i++)
         {
-            if (code.empty())
+            if (code.empty()) {
                 return -1;
+            }
 
             bool curBit = code.front(); code.pop();
             finalSymbol = (finalSymbol << 1) | curBit;
         }
     }
-    else finalSymbol = curNode->symbol;
+    else { finalSymbol = curNode->symbol; }
 
     return finalSymbol;
 }
@@ -93,7 +106,7 @@ void HuffTree::update(uint16_t symbol)
 
 void HuffTree::deleteNode(const HuffNode *node)
 {
-    if (node != NULL)
+    if (node != nullptr)
     {
         deleteNode(node->left);
         deleteNode(node->right);

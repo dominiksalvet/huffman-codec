@@ -13,14 +13,13 @@
 using std::vector;
 using std::queue;
 
-#define BITS_IN_SYMBOL 9
-#define MAX_SYMBOLS 512
-#define NYT_INDEX 511 // last index (would be unused otherwise)
+// this define is valid when diff model is not used
+#define MAX_SYMBOLS 256 // max possible symbols
 
 
 struct HuffNode
 {
-    uint16_t nodeNum; // type must respect MAX_SYMBOLS
+    uint16_t nodeNum;
     uint32_t freq; // min 4 GB of data per one tree
     uint16_t symbol; // for leaf nodes only
 
@@ -43,7 +42,7 @@ class HuffTree
 {
 public:
     // initialize the Huffman FGK tree
-    HuffTree();
+    HuffTree(bool useDiffSymbols);
     // clean-up the tree
     ~HuffTree();
 
@@ -58,8 +57,13 @@ public:
 
 private:
     HuffNode *root;
-    // initialized as empty (includes NYT code)
-    vector<bool> codes[MAX_SYMBOLS]; // codes of symbols
+    int bitsInSymbol; // number of bits in one symbol
+
+    // these vectors are initialized as empty
+    vector<bool> codeNYT; // code of NYT node
+    // codes of symbols, some may be unsed when diff model is not used
+    // nevertheless, it has no effect on the final result
+    vector<bool> codes[2 * MAX_SYMBOLS];
     
     // clean-up resources of the given node
     void deleteNode(const HuffNode *node);

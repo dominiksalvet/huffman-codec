@@ -58,8 +58,9 @@ vector<uint8_t> compress(
     // load input file to internal representation vector
     vector<uint16_t> inData; // 16 bits for simpler later processing
     int c;
-    while ((c = ifs.get()) != EOF)
+    while ((c = ifs.get()) != EOF) {
         inData.push_back(c); // implicit conversion
+    }
     ifs.close();
 
     // derive image height
@@ -69,12 +70,14 @@ vector<uint8_t> compress(
         exit(6);
     }
 
-    if (useModel)
+    if (useModel) {
         applyDiffModel(inData);
+    }
 
     vector<uint8_t> a;
-    for (uint16_t item : inData)
+    for (uint16_t item : inData) {
         a.push_back(item);
+    }
     return a;
 }
 
@@ -83,8 +86,9 @@ vector<uint8_t> decompress(ifstream &ifs)
 {
     vector<uint8_t> inData;
     int c;
-    while ((c = ifs.get()) != EOF)
+    while ((c = ifs.get()) != EOF) {
         inData.push_back(c);
+    }
     ifs.close();
 
     return inData;
@@ -164,10 +168,11 @@ int main(int argc, char *argv[])
 
     // perform required operation
     vector<uint8_t> outData; // alway array of bytes
-    if (useCompr)
+    if (useCompr) {
         outData = compress(ifs, useModel, adaptScan, imgWidth);
-    else
+    } else {
         outData = decompress(ifs);
+    }
     
     writeOutData(outData, ofp);
 }
