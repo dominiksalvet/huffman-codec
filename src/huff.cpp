@@ -20,7 +20,7 @@ bool isRoot(const HuffNode &node)
 
 HuffTree::HuffTree()
 {
-    this->root = new HuffNode{0, 0, NULL, NULL, NULL}; //NYT node
+    this->root = new HuffNode{0, 0, NULL, NULL, NULL}; // NYT node
 }
 
 HuffTree::~HuffTree()
