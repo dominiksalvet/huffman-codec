@@ -28,6 +28,7 @@ const string HELP_MESSAGE =
 "  -w     used image width\n"
 "  -h     show this help\n";
 
+
 // redirect input to stderr, but also print a help hint
 void cerrh(const char *s)
 {
@@ -35,18 +36,19 @@ void cerrh(const char *s)
 }
 
 // transform pixel values to their differences (in situ)
-void applyDiffModel(vector<int16_t> &vec)
+// to keep unsigned values, they are normalized to 0-510 range
+void applyDiffModel(vector<uint16_t> &vec)
 {
     int16_t prevVal = 0;
     for (size_t i = 0; i < vec.size(); i++)
     {
         int16_t curVal = vec[i];
-        vec[i] = curVal - prevVal;
+        vec[i] = (curVal - prevVal) + 255; // normalization
         prevVal = curVal;
     }
 }
 
-// compress image based on several given options
+// TODO: compress image based on several given options
 vector<uint8_t> compress(
     ifstream& ifs,
     bool useModel,
@@ -54,7 +56,7 @@ vector<uint8_t> compress(
     int32_t imgWidth)
 {
     // load input file to internal representation vector
-    vector<int16_t> inData; // 16 bits for sure
+    vector<uint16_t> inData; // 16 bits for simpler later processing
     int c;
     while ((c = ifs.get()) != EOF)
         inData.push_back(c); // implicit conversion
@@ -63,32 +65,29 @@ vector<uint8_t> compress(
     // derive image height
     if ((inData.size() % imgWidth) != 0)
     {
-        cerr << "ERROR: unable to determine integer image height\n";
+        cerr << "ERROR: invalid resolution of input image detected\n";
         exit(6);
     }
-    int32_t imgHeight = inData.size() / imgWidth;
 
     if (useModel)
         applyDiffModel(inData);
 
-    // TODO: return real data
     vector<uint8_t> a;
-    for (int16_t item : inData)
-        a.push_back(abs(item));
+    for (uint16_t item : inData)
+        a.push_back(item);
     return a;
 }
 
-// decompress image of the given input stream
+// TODO: decompress image of the given input stream
 vector<uint8_t> decompress(ifstream &ifs)
 {
-    // load input file to internal representation vector
-    vector<uint8_t> inData; // byte by byte
+    vector<uint8_t> inData;
     int c;
     while ((c = ifs.get()) != EOF)
         inData.push_back(c);
     ifs.close();
 
-    return inData; // TODO: return real data
+    return inData;
 }
 
 // write final data from vector to given output file path
@@ -105,6 +104,7 @@ void writeOutData(vector<uint8_t> &vec, const string &ofp)
     ofs.close();
 }
 
+
 // entry point of program
 int main(int argc, char *argv[])
 {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     bool adaptScan = false;
 
     string ifp; // input file path (empty by default constructor)
-    string ofp = "a.out"; // some default path
+    string ofp = "a.out"; // default path
     int32_t imgWidth = 0;
 
     // argument processing
