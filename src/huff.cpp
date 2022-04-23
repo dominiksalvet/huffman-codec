@@ -2,22 +2,25 @@
 // login: xsalve03
 // date: 2022-04-20
 // filename: huff.cpp
-// summary: The implementation of Huffman tree and helper functions.
+// summary: The implementation of Huffman FGK tree and helper functions.
 
 #include "huff.hpp"
 
 bool isLeaf(const HuffNode &node)
 {
-    return !(node.left) && !(node.right);
+    return !node.left && !node.right;
 }
 
-HuffTree::HuffTree(uint8_t firstByteData)
+bool isRoot(const HuffNode &node)
 {
-    this->root = new HuffNode{0, 1, NULL, NULL, NULL};
-    HuffNode *NYT = new HuffNode{0, 0, this->root, NULL, NULL};
-    HuffNode *node = new HuffNode{firstByteData, 1, this->root, NULL, NULL};
-    this->root->left = NYT;
-    this->root->right = node;
+    return !node.parent;
+}
+
+// -------------------------- PUBLIC -------------------------------------------
+
+HuffTree::HuffTree()
+{
+    this->root = new HuffNode{0, 0, NULL, NULL, NULL}; //NYT node
 }
 
 HuffTree::~HuffTree()
@@ -39,6 +42,8 @@ void HuffTree::update(uint8_t byteData)
 {
     
 }
+
+// -------------------------- PRIVATE ------------------------------------------
 
 void HuffTree::deleteNode(const HuffNode *node)
 {
