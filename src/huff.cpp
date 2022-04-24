@@ -96,7 +96,37 @@ int HuffTree::decode(queue<bool> &code)
 
 void HuffTree::update(uint16_t symbol)
 {
+    HuffNode *node = symbolNodes[symbol];
+
+    if (node == nullptr) // NYT node splitting (add new symbol)
+    {
+        HuffNode *leftChild = new HuffNode{
+            uint16_t(nodeNYT->nodeNum - 2), 0, 0, nodeNYT, nullptr, nullptr};
+        node = new HuffNode{
+            uint16_t(nodeNYT->nodeNum - 1), 0, 0, nodeNYT, nullptr, nullptr};
+        
+        nodeNYT->left = leftChild; // new NYT node
+        nodeNYT->right = node; // new node for symbol
+
+        nodeNYT = leftChild;
+        symbolNodes[symbol] = node; // register new symbol
+    }
     
+    while (node != root)
+    {
+        HuffNode *succNode = findSuccNode(root, node->freq);
+
+        // check if any valid successor found (also useless to switch same nodes)
+        if (succNode != nullptr &&
+            succNode != node->parent &&
+            succNode != node) {
+            swapNodes(node, succNode);
+        }
+        node->freq++;
+
+        node = node->parent; // next node
+    }
+    node->freq++; // also increase root freq afterwards
 }
 
 // -------------------------- PRIVATE ------------------------------------------
@@ -120,6 +150,35 @@ vector<bool> HuffTree::nodeToCode(HuffNode *const node)
     // the received code is in the reverse order
     reverse(code.begin(), code.end());
     return code;
+}
+
+HuffNode* HuffTree::findSuccNode(HuffNode *const node, uint16_t freq)
+{
+    HuffNode *succNode = nullptr;
+
+    if (!isLeaf(node) && node->freq > freq) // still higher value
+    {
+        HuffNode *leftSuccNode = findSuccNode(node->left, freq);
+        HuffNode *rightSuccNode = findSuccNode(node->right, freq);
+
+        if (leftSuccNode != nullptr && rightSuccNode != nullptr)
+        {
+            // prefer higher node number if both subtrees have candidate
+            if (leftSuccNode->nodeNum > rightSuccNode->nodeNum) {
+                succNode = leftSuccNode;
+            } else {
+                succNode = rightSuccNode;
+            }
+        }
+        else { // otherwise set to valid pointer of those two if exists
+            succNode = leftSuccNode != nullptr ? leftSuccNode : rightSuccNode;
+        }
+    }
+    else if (node->freq == freq) {
+        succNode = node;
+    }
+
+    return succNode;
 }
 
 void HuffTree::swapNodes(HuffNode *const node1, HuffNode *const node2)
