@@ -63,7 +63,7 @@ vector<uint8_t> compress(
     }
     ifs.close();
 
-    // derive image height
+    // check valid image resolution
     if ((inData.size() % imgWidth) != 0)
     {
         cerr << "ERROR: invalid resolution of input image detected\n";
