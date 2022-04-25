@@ -7,11 +7,12 @@
 * `[x]` spustitelna pomoci 'huff_codec'
 * `[x]` prepinace a options (getopt v unistd.h)
 * `[x]` huffman implementace FGK nebo Vitter
-* `[ ]` komentare, kde jsou potreba
-* `[ ]` zdrojove soubory hlavicka - jmeno, prijmeni, login, datum vytvoreni, nazev, summary
+* `[x]` komentare, kde jsou potreba
+* `[x]` zdrojove soubory hlavicka - jmeno, prijmeni, login, datum vytvoreni, nazev, summary
 * `[ ]` dokumentace (viz zadani)
 * `[ ]` odevzdava se kko_xsalve03.zip se zdrojakama, Makefile a PDF dokumentaci
 * `[ ]` pouzivani `[u]int<x>_t` datovych typu (sys/types.h)
 * `[ ]` pripadny debug valgrind (make debug target, DataDisplayDebugger)
 * `[ ]` use file header when compression/decompression
-* `[ ]` check supported file size limit and other limits (e.g., `freq`)
+* `[ ]` check supported file size limit and other limits (e.g., `freq`), check all `int`, etc.
+* `[ ]` diff model may not require 9 bits

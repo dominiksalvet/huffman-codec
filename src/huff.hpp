@@ -22,7 +22,7 @@ using std::ostream;
 struct HuffNode
 {
     uint16_t nodeNum;
-    uint32_t freq; // min 4 GB of data per one tree
+    uint64_t freq; // range is big enough for any real data
     uint16_t symbol; // for leaf nodes only
 
     HuffNode *parent;
@@ -47,7 +47,7 @@ public:
     // encode given symbol based on current tree
     vector<bool> encode(uint16_t symbol);
     // decode and extract one symbol from given code
-    // return -1 when end of input stream
+    // return -1 when unexpected end of input stream from the queue
     int decode(queue<bool> *const code);
 
     // update the tree based on given symbol
@@ -69,7 +69,7 @@ private:
     // go through the tree up to the root to provide the code of the node symbol
     vector<bool> nodeToCode(HuffNode *const node);
     // recursively search given node for greatest node number with the given frequency
-    HuffNode* findSuccNode(HuffNode *const node, uint32_t freq);
+    HuffNode* findSuccNode(HuffNode *const node, uint64_t freq);
     // swap two given nodes (must not be called on the root node)
     void swapNodes(HuffNode *const node1, HuffNode *const node2);
 

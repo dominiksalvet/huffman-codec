@@ -71,13 +71,14 @@ int HuffTree::decode(queue<bool> *const code)
         }
 
         // decision bit to choose the next node
-        bool decBit = code->front(); code->pop();
+        bool decBit = code->front(); code->pop(); // pop from queue
         curNode = decBit ? curNode->right : curNode->left;
     }
 
-    uint16_t finalSymbol = 0;
+    uint16_t finalSymbol;
     if (curNode == nodeNYT)
     {
+        finalSymbol = 0;
         for (int i = 0; i < bitsInSymbol; i++)
         {
             if (code->empty()) {
@@ -88,7 +89,9 @@ int HuffTree::decode(queue<bool> *const code)
             finalSymbol = (finalSymbol << 1) | curBit;
         }
     }
-    else { finalSymbol = curNode->symbol; }
+    else {
+        finalSymbol = curNode->symbol;
+    }
 
     return finalSymbol;
 }
@@ -155,7 +158,7 @@ vector<bool> HuffTree::nodeToCode(HuffNode *const node)
     return code;
 }
 
-HuffNode* HuffTree::findSuccNode(HuffNode *const node, uint32_t freq)
+HuffNode* HuffTree::findSuccNode(HuffNode *const node, uint64_t freq)
 {
     HuffNode *succNode = nullptr;
 
