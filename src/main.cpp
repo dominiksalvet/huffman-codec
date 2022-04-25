@@ -17,15 +17,16 @@ using namespace std;
 
 const string HELP_MESSAGE =
 "USAGE:\n"
-"  huff_codec [-cma] -w WIDTH -i IFILE [-o OFILE]\n"
+"  huff_codec [-cma] -i IFILE [-o OFILE] [-w WIDTH]\n"
 "  huff_codec -d -i IFILE [-o OFILE] | -h\n"
 "\n"
 "OPTION:\n"
 "  -c/-d  perform compression/decompression\n"
 "  -m     use model for image preprocessing\n"
 "  -a     use adaptive scanning\n"
-"  -i/-o  input/output file path\n"
-"  -w     used image width\n"
+"  -i     input file path\n"
+"  -o     output file path (default: b.out)\n"
+"  -w     used image width (default: 512)\n"
 "  -h     show this help\n";
 
 
@@ -196,9 +197,10 @@ int main(int argc, char *argv[])
 
     string ifp; // input file path (empty by default constructor)
     string ofp = "b.out"; // default path
-    uint64_t imgWidth = 0;
+    uint64_t imgWidth = 512; // default value
 
     // argument processing
+    // options are designed to be more tolerant (yet they meet the assignment)
     int opt;
     while ((opt = getopt(argc, argv, ":cdmai:o:w:h")) != -1)
     {
@@ -229,9 +231,9 @@ int main(int argc, char *argv[])
         cerrh("ERROR: no input file path provided\n");
         return 3;
     }
-    if (useCompr && imgWidth <= 0)
+    if (useCompr && imgWidth == 0)
     {
-        cerrh("ERROR: invalid or missing image width\n");
+        cerrh("ERROR: invalid image width\n");
         return 4;
     }
 
