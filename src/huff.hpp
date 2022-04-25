@@ -9,9 +9,11 @@
 #include <vector>
 #include <cstdint>
 #include <queue>
+#include <ostream>
 
 using std::vector;
 using std::queue;
+using std::ostream;
 
 // this define is valid when diff model is not used
 #define MAX_SYMBOLS 256 // max possible symbols
@@ -51,10 +53,13 @@ public:
     // update the tree based on given symbol
     void update(uint16_t symbol);
 
+    // print internal representation of tree to given stream (for debugging)
+    void print(ostream &os);
+
 private:
     HuffNode *root;
     HuffNode *nodeNYT;
-    
+
     // pointers to symbol nodes, some may be unsed when diff model is not used
     // nevertheless, it has no effect on the final result
     HuffNode *symbolNodes[2 * MAX_SYMBOLS] = {}; // initialized with nullptrs
@@ -67,6 +72,9 @@ private:
     HuffNode* findSuccNode(HuffNode *const node, uint16_t freq);
     // swap two given nodes (must not be called on the root node)
     void swapNodes(HuffNode *const node1, HuffNode *const node2);
+
     // clean-up resources of the given node
     void deleteNode(const HuffNode *node);
+    // print recursively given node to given stream (for debugging)
+    void printNode(const HuffNode *node, ostream &os);
 };

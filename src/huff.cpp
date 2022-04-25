@@ -34,8 +34,7 @@ HuffTree::HuffTree(bool useDiffSymbols)
     bitsInSymbol = useDiffSymbols ? CHAR_BIT + 1 : CHAR_BIT;
 }
 
-HuffTree::~HuffTree()
-{
+HuffTree::~HuffTree() {
     deleteNode(root);
 }
 
@@ -129,6 +128,10 @@ void HuffTree::update(uint16_t symbol)
     node->freq++; // also increase root freq afterwards
 }
 
+void HuffTree::print(ostream &os) {
+    printNode(root, os);
+}
+
 // -------------------------- PRIVATE ------------------------------------------
 
 vector<bool> HuffTree::nodeToCode(HuffNode *const node)
@@ -214,6 +217,8 @@ void HuffTree::swapNodes(HuffNode *const node1, HuffNode *const node2)
     node2->parent = node1Parent;
 }
 
+// -------------------------- HELPER FUNCTIONS ---------------------------------
+
 void HuffTree::deleteNode(const HuffNode *node)
 {
     if (node != nullptr)
@@ -221,5 +226,42 @@ void HuffTree::deleteNode(const HuffNode *node)
         deleteNode(node->left);
         deleteNode(node->right);
         delete node;
+    }
+}
+
+void HuffTree::printNode(const HuffNode *node, ostream &os)
+{
+    os << "nodeNum: " << node->nodeNum << 
+          ", freq: " << node->freq <<
+          ", symbol: " << node->symbol;
+    
+    os << ", parent: ";
+    if (node->parent != nullptr) {
+        os << node->parent->nodeNum;
+    } else {
+        os << "NULL";
+    }
+
+    os << ", left: ";
+    if (node->left != nullptr) {
+        os << node->left->nodeNum;
+    } else {
+        os << "NULL";
+    }
+
+    os << ", right: ";
+    if (node->right != nullptr) {
+        os << node->right->nodeNum;
+    } else {
+        os << "NULL";
+    }
+    os << "\n";
+
+    if (node->left != nullptr) {
+        printNode(node->left, os);
+    }
+
+    if (node->right != nullptr) {
+        printNode(node->right, os);
     }
 }

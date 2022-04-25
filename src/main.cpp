@@ -30,8 +30,7 @@ const string HELP_MESSAGE =
 
 
 // redirect input to stderr, but also print a help hint
-void cerrh(const char *s)
-{
+void cerrh(const char *s) {
     cerr << s << "try 'huff_codec -h' for more information\n";
 }
 
