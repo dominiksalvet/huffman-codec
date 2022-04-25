@@ -69,7 +69,7 @@ private:
     // go through the tree up to the root to provide the code of the node symbol
     vector<bool> nodeToCode(HuffNode *const node);
     // recursively search given node for greatest node number with the given frequency
-    HuffNode* findSuccNode(HuffNode *const node, uint16_t freq);
+    HuffNode* findSuccNode(HuffNode *const node, uint32_t freq);
     // swap two given nodes (must not be called on the root node)
     void swapNodes(HuffNode *const node1, HuffNode *const node2);
 

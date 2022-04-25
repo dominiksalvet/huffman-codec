@@ -155,7 +155,7 @@ vector<bool> HuffTree::nodeToCode(HuffNode *const node)
     return code;
 }
 
-HuffNode* HuffTree::findSuccNode(HuffNode *const node, uint16_t freq)
+HuffNode* HuffTree::findSuccNode(HuffNode *const node, uint32_t freq)
 {
     HuffNode *succNode = nullptr;
 
