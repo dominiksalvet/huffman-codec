@@ -6,7 +6,6 @@
 
 #include "huff.hpp"
 
-#include <climits>
 #include <algorithm>
 
 using std::reverse;
@@ -19,26 +18,21 @@ bool isLeaf(const HuffNode *node)
 
 // -------------------------- PUBLIC -------------------------------------------
 
-HuffTree::HuffTree(bool useDiffSymbols)
+HuffTree::HuffTree()
 {
-    // there are twice as much symbols when diff model is used
-    int realMaxSymbols = useDiffSymbols ? 2 * MAX_SYMBOLS : MAX_SYMBOLS;
-
     // NYT is not included in the symbols alphabet (hence this formula)
-    uint16_t firstNodeNum = 2 * realMaxSymbols; // include 0 as number
+    uint16_t firstNodeNum = 2 * MAX_SYMBOLS; // also, include 0 as node number
+
     // create tree with NYT node only
     root = new HuffNode{firstNodeNum, 0, 0, nullptr, nullptr, nullptr};
     nodeNYT = root;
-
-    // we consider only platforms where memory is addressable by bytes (8 bits)
-    bitsInSymbol = useDiffSymbols ? CHAR_BIT + 1 : CHAR_BIT;
 }
 
 HuffTree::~HuffTree() {
     deleteNode(root);
 }
 
-vector<bool> HuffTree::encode(uint16_t symbol)
+vector<bool> HuffTree::encode(uint8_t symbol)
 {
     vector<bool> code;
     HuffNode *symbolNode = symbolNodes[symbol];
@@ -48,9 +42,9 @@ vector<bool> HuffTree::encode(uint16_t symbol)
         code = nodeToCode(nodeNYT); // we must start with NYT code
 
         // current symbol to boolean vector conversion
-        for (int i = 0; i < bitsInSymbol; i++)
+        for (int i = 0; i < BITS_IN_SYMBOL; i++)
         {
-            bool curBit = (symbol >> (bitsInSymbol - i - 1)) & 0x01;
+            bool curBit = (symbol >> (BITS_IN_SYMBOL - i - 1)) & 0x01;
             code.push_back(curBit);
         }
     }
@@ -75,11 +69,11 @@ int HuffTree::decode(queue<bool> *const code)
         curNode = decBit ? curNode->right : curNode->left;
     }
 
-    uint16_t finalSymbol;
+    uint8_t finalSymbol;
     if (curNode == nodeNYT)
     {
         finalSymbol = 0;
-        for (int i = 0; i < bitsInSymbol; i++)
+        for (int i = 0; i < BITS_IN_SYMBOL; i++)
         {
             if (code->empty()) {
                 return -1;
@@ -96,7 +90,7 @@ int HuffTree::decode(queue<bool> *const code)
     return finalSymbol;
 }
 
-void HuffTree::update(uint16_t symbol)
+void HuffTree::update(uint8_t symbol)
 {
     HuffNode *node = symbolNodes[symbol];
 

@@ -34,46 +34,40 @@ void cerrh(const char *s) {
     cerr << s << "try 'huff_codec -h' for more information\n";
 }
 
-
-
 // transform pixel values to their differences (in situ)
-// to keep unsigned values, they are normalized to 0-510 range
-void applyDiffModel(vector<uint16_t> &vec)
+// this algorithm utilizes the properties of two's complement (underflow)
+void applyDiffModel(vector<uint8_t> &vec)
 {
-    int16_t prevVal = 0;
+    uint8_t prevVal = 0;
     for (size_t i = 0; i < vec.size(); i++)
     {
-        int16_t curVal = vec[i];
-        vec[i] = (curVal - prevVal) + 255; // normalization
+        uint8_t curVal = vec[i];
+        vec[i] = (curVal - prevVal); // truncated result of underflow
         prevVal = curVal;
     }
 }
 
-// revert the differential model (creates new vector due different types)
-vector<uint8_t> revertDiffModel(const vector<uint16_t> &vec)
+// revert the differential model (in situ)
+// also uses the two's complement properties (overflow)
+void revertDiffModel(vector<uint8_t> &vec)
 {
-    vector<uint8_t> finalVec;
-
-    int16_t prevVal = 0;
-    for (uint16_t symbol : vec)
+    uint8_t prevVal = 0;
+    for (size_t i = 0; i < vec.size(); i++)
     {
-        int16_t curVal = symbol - 255;
-        finalVec.push_back(prevVal + curVal);
-        prevVal += curVal;
+        vec[i] += prevVal; // may overflow (truncated)
+        prevVal = vec[i];
     }
-
-    return finalVec;
 }
 
 // compress image based on several given options
-// data contents is preceded with header: <64b-pixel-count><1b-diff-model>
+// data is preceded with header: <64b-pixel-count><1b-diff-model>
 vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t imgWidth)
 {
     // load input file to internal representation vector
-    vector<uint16_t> inData; // 16 bits for simpler later processing
+    vector<uint8_t> inData;
     int c;
     while ((c = ifs.get()) != EOF) {
-        inData.push_back(c); // implicit conversion
+        inData.push_back(c);
     }
     ifs.close();
 
@@ -90,29 +84,29 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
     }
 
     // create the Huffman FGK tree
-    HuffTree huffTree(useModel);
+    HuffTree huffTree; // call default contructor
 
     vector<bool> outBits;
     // header part <1b-diff-model> to indicate whether diff model was used
     outBits.push_back(useModel);
 
     // encode input data to bit vector
-    for (uint16_t symbol : inData)
+    for (uint8_t symbol : inData)
     {
         vector<bool> symbolCode = huffTree.encode(symbol);
         // append symbol code to the existing code
         outBits.insert(outBits.end(), symbolCode.begin(), symbolCode.end());
         huffTree.update(symbol);
     }
-    // add remaining bits so their final count is divisible by 8
+    // add remaining bits so their final count is divisible by bits in symbol
     while (outBits.size() % CHAR_BIT != 0) {
         outBits.push_back(0); // value does not matter
     }
 
     vector<uint8_t> outData;
     // header part <64b-pixel-count> to indicated total number of encoded pixels
-    for (int i = 0; i < CHAR_BIT; i++) {
-        outData.push_back(inData.size() >> (8 * i));
+    for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
+        outData.push_back(inData.size() >> (CHAR_BIT * i));
     }
 
     // convert bit vector to byte array
@@ -149,12 +143,13 @@ vector<uint8_t> decompress(ifstream &ifs)
         }
     }
     ifs.close();
+    // check where diff model was used
+    bool modelUsed = inData.front(); inData.pop(); // remove from queue
 
     // create the Huffman FGK tree
-    bool useModel = inData.front(); inData.pop();
-    HuffTree huffTree(useModel);
+    HuffTree huffTree;
 
-    vector<uint16_t> outSymbols;
+    vector<uint8_t> outData;
     for (uint64_t i = 0; i < pixelCount; i++)
     {
         int decResult = huffTree.decode(&inData);
@@ -163,29 +158,21 @@ vector<uint8_t> decompress(ifstream &ifs)
             cerr << "ERROR: invalid compressed file contents\n";
             exit(9);
         }
-        uint16_t symbol = decResult;
+        uint8_t symbol = decResult;
     
         huffTree.update(symbol);
-        outSymbols.push_back(symbol);
+        outData.push_back(symbol);
     }
 
-    // final postprocessing
-    vector<uint8_t> outData;
-    if (useModel) {
-        outData = revertDiffModel(outSymbols);
-    } else {
-        for (uint16_t symbol : outSymbols) {
-            outData.push_back(symbol);
-        }
+    if (modelUsed) {
+        revertDiffModel(outData);
     }
 
     return outData;
 }
 
-
-
 // write final data from vector to given output file path
-void writeOutData(vector<uint8_t> &vec, const string &filePath)
+void writeOutData(const vector<uint8_t> &vec, const string &filePath)
 {
     ofstream ofs(filePath, ios::out | ios::binary); // output file stream
     if (ofs.fail())

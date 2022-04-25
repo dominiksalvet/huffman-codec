@@ -15,15 +15,15 @@ using std::vector;
 using std::queue;
 using std::ostream;
 
-// this define is valid when diff model is not used
 #define MAX_SYMBOLS 256 // max possible symbols
+#define BITS_IN_SYMBOL 8 // number of bits in one symbol
 
 
 struct HuffNode
 {
     uint16_t nodeNum;
     uint64_t freq; // range is big enough for any real data
-    uint16_t symbol; // for leaf nodes only
+    uint8_t symbol; // for leaf nodes only
 
     HuffNode *parent;
     HuffNode *left, *right;
@@ -40,31 +40,29 @@ class HuffTree
 {
 public:
     // initialize the Huffman FGK tree
-    HuffTree(bool useDiffSymbols);
+    HuffTree();
     // clean-up the tree
     ~HuffTree();
 
     // encode given symbol based on current tree
-    vector<bool> encode(uint16_t symbol);
+    vector<bool> encode(uint8_t symbol);
     // decode and extract one symbol from given code
     // return -1 when unexpected end of input stream from the queue
     int decode(queue<bool> *const code);
 
     // update the tree based on given symbol
-    void update(uint16_t symbol);
+    void update(uint8_t symbol);
 
     // print internal representation of tree to given stream (for debugging)
     void print(ostream &os);
 
 private:
+    // pointers to root and NYT node
     HuffNode *root;
     HuffNode *nodeNYT;
 
-    // pointers to symbol nodes, some may be unsed when diff model is not used
-    // nevertheless, it has no effect on the final result
-    HuffNode *symbolNodes[2 * MAX_SYMBOLS] = {}; // initialized with nullptrs
-    
-    int bitsInSymbol; // number of bits in one symbol
+    // pointers to symbol nodes
+    HuffNode *symbolNodes[MAX_SYMBOLS] = {}; // initialized with nullptrs
     
     // go through the tree up to the root to provide the code of the node symbol
     vector<bool> nodeToCode(HuffNode *const node);
