@@ -111,7 +111,7 @@ void HuffTree::update(uint16_t symbol)
         nodeNYT = leftChild;
         symbolNodes[symbol] = node; // register new symbol
     }
-    
+
     while (node != root)
     {
         HuffNode *succNode = findSuccNode(root, node->freq);
