@@ -48,7 +48,7 @@ public:
     vector<bool> encode(uint16_t symbol);
     // decode and extract one symbol from given code
     // return -1 when end of input stream
-    int decode(queue<bool> &code);
+    int decode(queue<bool> *const code);
 
     // update the tree based on given symbol
     void update(uint16_t symbol);
