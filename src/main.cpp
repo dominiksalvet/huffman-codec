@@ -34,6 +34,8 @@ void cerrh(const char *s) {
     cerr << s << "try 'huff_codec -h' for more information\n";
 }
 
+
+
 // transform pixel values to their differences (in situ)
 // to keep unsigned values, they are normalized to 0-510 range
 void applyDiffModel(vector<uint16_t> &vec)
@@ -47,8 +49,24 @@ void applyDiffModel(vector<uint16_t> &vec)
     }
 }
 
-// TODO: add support for diff model, adaptive scanning
+// revert the differential model (creates new vector due different types)
+vector<uint8_t> revertDiffModel(const vector<uint16_t> &vec)
+{
+    vector<uint8_t> finalVec;
+
+    int16_t prevVal = 0;
+    for (uint16_t symbol : vec)
+    {
+        int16_t curVal = symbol - 255;
+        finalVec.push_back(prevVal + curVal);
+        prevVal += curVal;
+    }
+
+    return finalVec;
+}
+
 // compress image based on several given options
+// data contents is preceded with header: <64b-pixel-count><1b-diff-model>
 vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t imgWidth)
 {
     // load input file to internal representation vector
@@ -66,11 +84,19 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
         exit(6);
     }
 
+    // apply differential model
+    if (useModel) {
+        applyDiffModel(inData);
+    }
+
     // create the Huffman FGK tree
-    HuffTree huffTree(false);
+    HuffTree huffTree(useModel);
+
+    vector<bool> outBits;
+    // header part <1b-diff-model> to indicate whether diff model was used
+    outBits.push_back(useModel);
 
     // encode input data to bit vector
-    vector<bool> outBits;
     for (uint16_t symbol : inData)
     {
         vector<bool> symbolCode = huffTree.encode(symbol);
@@ -84,7 +110,7 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
     }
 
     vector<uint8_t> outData;
-    // create header: <64b-pixel-count>
+    // header part <64b-pixel-count> to indicated total number of encoded pixels
     for (int i = 0; i < CHAR_BIT; i++) {
         outData.push_back(inData.size() >> (8 * i));
     }
@@ -101,8 +127,8 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
     return outData;
 }
 
-// TODO: add support for diff model, adaptive scanning
 // decompress image of the given input stream (based on its header)
+// it respects the header as described in the compress function comments
 vector<uint8_t> decompress(ifstream &ifs)
 {
     // read total pixel count
@@ -125,9 +151,10 @@ vector<uint8_t> decompress(ifstream &ifs)
     ifs.close();
 
     // create the Huffman FGK tree
-    HuffTree huffTree(false);
+    bool useModel = inData.front(); inData.pop();
+    HuffTree huffTree(useModel);
 
-    vector<uint8_t> outData;
+    vector<uint16_t> outSymbols;
     for (uint64_t i = 0; i < pixelCount; i++)
     {
         int decResult = huffTree.decode(&inData);
@@ -139,11 +166,23 @@ vector<uint8_t> decompress(ifstream &ifs)
         uint16_t symbol = decResult;
     
         huffTree.update(symbol);
-        outData.push_back(uint8_t(symbol));
+        outSymbols.push_back(symbol);
     }
-    
+
+    // final postprocessing
+    vector<uint8_t> outData;
+    if (useModel) {
+        outData = revertDiffModel(outSymbols);
+    } else {
+        for (uint16_t symbol : outSymbols) {
+            outData.push_back(symbol);
+        }
+    }
+
     return outData;
 }
+
+
 
 // write final data from vector to given output file path
 void writeOutData(vector<uint8_t> &vec, const string &filePath)

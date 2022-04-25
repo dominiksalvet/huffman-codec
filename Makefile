@@ -15,4 +15,4 @@ huff_codec: $(SRC_FILES) $(HEADER_FILES)
 	g++ -Wall -o $@ $(SRC_FILES)
 
 clean:
-	rm -f huff_codec a.out
+	rm -f huff_codec a.out huff raw
