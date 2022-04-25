@@ -8,8 +8,8 @@
 #include <iostream>
 #include <unistd.h>
 #include <fstream>
-#include <sstream>
 #include <vector>
+#include <climits>
 
 #include "huff.hpp"
 
@@ -47,12 +47,9 @@ void applyDiffModel(vector<uint16_t> &vec)
     }
 }
 
-// TODO: compress image based on several given options
-vector<uint8_t> compress(
-    ifstream& ifs,
-    bool useModel,
-    bool adaptScan,
-    int32_t imgWidth)
+// TODO: add support for diff model, adaptive scanning
+// compress image based on several given options
+vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t imgWidth)
 {
     // load input file to internal representation vector
     vector<uint16_t> inData; // 16 bits for simpler later processing
@@ -69,37 +66,92 @@ vector<uint8_t> compress(
         exit(6);
     }
 
-    if (useModel) {
-        applyDiffModel(inData);
+    // create the Huffman FGK tree
+    HuffTree huffTree(false);
+
+    // encode input data to bit vector
+    vector<bool> outBits;
+    for (uint16_t symbol : inData)
+    {
+        vector<bool> symbolCode = huffTree.encode(symbol);
+        // append symbol code to the existing code
+        outBits.insert(outBits.end(), symbolCode.begin(), symbolCode.end());
+        huffTree.update(symbol);
+    }
+    // add remaining bits so their final count is divisible by 8
+    while (outBits.size() % CHAR_BIT != 0) {
+        outBits.push_back(0); // value does not matter
     }
 
-    vector<uint8_t> a;
-    for (uint16_t item : inData) {
-        a.push_back(item);
+    vector<uint8_t> outData;
+    // create header: <64b-pixel-count>
+    for (int i = 0; i < CHAR_BIT; i++) {
+        outData.push_back(inData.size() >> (8 * i));
     }
-    return a;
+
+    // convert bit vector to byte array
+    for (size_t i = 0; i < outBits.size(); i += 8) {
+        uint8_t curByte = 0;
+        for (int j = 0; j < CHAR_BIT; j++) {
+            curByte = (curByte << 1) | outBits[i + j];
+        }
+        outData.push_back(curByte);
+    }
+
+    return outData;
 }
 
-// TODO: decompress image of the given input stream
+// TODO: add support for diff model, adaptive scanning
+// decompress image of the given input stream (based on its header)
 vector<uint8_t> decompress(ifstream &ifs)
 {
-    vector<uint8_t> inData;
+    // read total pixel count
+    uint64_t pixelCount;
+    ifs.read((char *)&pixelCount, sizeof(uint64_t));
+    if (!ifs)
+    {
+        cerr << "ERROR: invalid compressed file header\n";
+        exit(8);
+    }
+
+    // load input file to internal representation vector
+    queue<bool> inData;
     int c;
     while ((c = ifs.get()) != EOF) {
-        inData.push_back(c);
+        for (int i = 0; i < CHAR_BIT; i++) {
+            inData.push((c >> (CHAR_BIT - i - 1) & 0x01));
+        }
     }
     ifs.close();
 
-    return inData;
+    // create the Huffman FGK tree
+    HuffTree huffTree(false);
+
+    vector<uint8_t> outData;
+    for (uint64_t i = 0; i < pixelCount; i++)
+    {
+        int decResult = huffTree.decode(&inData);
+        if (decResult == -1)
+        {
+            cerr << "ERROR: invalid compressed file contents\n";
+            exit(9);
+        }
+        uint16_t symbol = decResult;
+    
+        huffTree.update(symbol);
+        outData.push_back(uint8_t(symbol));
+    }
+    
+    return outData;
 }
 
 // write final data from vector to given output file path
-void writeOutData(vector<uint8_t> &vec, const string &ofp)
+void writeOutData(vector<uint8_t> &vec, const string &filePath)
 {
-    ofstream ofs(ofp, ios::out | ios::binary); // output file stream
+    ofstream ofs(filePath, ios::out | ios::binary); // output file stream
     if (ofs.fail())
     {
-        cerr << "ERROR: cannot write to " << ofp << " output file\n";
+        cerr << "ERROR: cannot write to " << filePath << " output file\n";
         exit(7);
     }
 
@@ -117,8 +169,8 @@ int main(int argc, char *argv[])
     bool adaptScan = false;
 
     string ifp; // input file path (empty by default constructor)
-    string ofp = "a.out"; // default path
-    int32_t imgWidth = 0;
+    string ofp = "b.out"; // default path
+    uint64_t imgWidth = 0;
 
     // argument processing
     int opt;
@@ -132,7 +184,7 @@ int main(int argc, char *argv[])
         case 'a': adaptScan = true; break;
         case 'i': ifp = optarg; break;
         case 'o': ofp = optarg; break;
-        case 'w': imgWidth = stoi(optarg); break;
+        case 'w': imgWidth = stoull(optarg); break;
         case 'h':
             cout << HELP_MESSAGE;
             return 0; break;
