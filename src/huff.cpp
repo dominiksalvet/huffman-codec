@@ -103,7 +103,7 @@ void HuffTree::update(uint16_t symbol)
         HuffNode *leftChild = new HuffNode{
             uint16_t(nodeNYT->nodeNum - 2), 0, 0, nodeNYT, nullptr, nullptr};
         node = new HuffNode{
-            uint16_t(nodeNYT->nodeNum - 1), 0, 0, nodeNYT, nullptr, nullptr};
+            uint16_t(nodeNYT->nodeNum - 1), 0, symbol, nodeNYT, nullptr, nullptr};
         
         nodeNYT->left = leftChild; // new NYT node
         nodeNYT->right = node; // new node for symbol
