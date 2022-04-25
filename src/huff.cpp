@@ -188,13 +188,22 @@ void HuffTree::swapNodes(HuffNode *const node1, HuffNode *const node2)
     node1->nodeNum = node2->nodeNum;
     node2->nodeNum = node1Num;
 
+    // first scan, then modify (to prevent bugs)
+    bool node1IsLeftChild = false;
     if (node1->parent->left == node1) {
+        node1IsLeftChild = true;
+    }
+    bool node2IsLeftChild = false;
+    if (node2->parent->left == node2) {
+        node2IsLeftChild = true;
+    }
+
+    if (node1IsLeftChild) {
         node1->parent->left = node2;
     } else {
         node1->parent->right = node2;
     }
-
-    if (node2->parent->left == node2) {
+    if (node2IsLeftChild) {
         node2->parent->left = node1;
     } else {
         node2->parent->right = node1;
