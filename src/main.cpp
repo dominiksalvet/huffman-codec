@@ -12,7 +12,7 @@
 #include <climits>
 
 #include "transform.hpp"
-#include "huff.hpp"
+#include "huffman.hpp"
 
 using namespace std;
 

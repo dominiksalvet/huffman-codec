@@ -4,7 +4,7 @@
 // filename: huff.cpp
 // summary: The implementation of Huffman FGK tree and helper functions.
 
-#include "huff.hpp"
+#include "huffman.hpp"
 
 #include <algorithm>
 
