@@ -6,8 +6,10 @@
 
 SRC_DIR = src
 SRC_FILES = $(SRC_DIR)/main.cpp\
-            $(SRC_DIR)/huff.cpp
-HEADER_FILES = $(SRC_DIR)/huff.hpp
+            $(SRC_DIR)/huff.cpp\
+            $(SRC_DIR)/transform.cpp
+HEADER_FILES = $(SRC_DIR)/huff.hpp\
+               $(SRC_DIR)/transform.hpp
 
 all: huff_codec
 

@@ -11,6 +11,7 @@
 #include <vector>
 #include <climits>
 
+#include "transform.hpp"
 #include "huff.hpp"
 
 using namespace std;
@@ -33,31 +34,6 @@ const string HELP_MESSAGE =
 // redirect input to stderr, but also print a help hint
 void cerrh(const char *s) {
     cerr << s << "try 'huff_codec -h' for more information\n";
-}
-
-// transform pixel values to their differences (in situ)
-// this algorithm utilizes the properties of two's complement (underflow)
-void applyDiffModel(vector<uint8_t> &vec)
-{
-    uint8_t prevVal = 0;
-    for (size_t i = 0; i < vec.size(); i++)
-    {
-        uint8_t curVal = vec[i];
-        vec[i] = (curVal - prevVal); // truncated result of underflow
-        prevVal = curVal;
-    }
-}
-
-// revert the differential model (in situ)
-// also uses the two's complement properties (overflow)
-void revertDiffModel(vector<uint8_t> &vec)
-{
-    uint8_t prevVal = 0;
-    for (size_t i = 0; i < vec.size(); i++)
-    {
-        vec[i] += prevVal; // may overflow (truncated)
-        prevVal = vec[i];
-    }
 }
 
 // compress image based on several given options

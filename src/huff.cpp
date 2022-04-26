@@ -10,6 +10,7 @@
 
 using std::reverse;
 
+
 bool isLeaf(const HuffNode *node)
 {
     // no need to check the other child for Huffman FGK tree
