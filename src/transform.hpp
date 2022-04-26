@@ -19,3 +19,9 @@ void applyDiffModel(vector<uint8_t> &vec);
 // revert the differential model (in situ)
 // also uses the two's complement properties (overflow)
 void revertDiffModel(vector<uint8_t> &vec);
+
+// apply run-length encoding without explicit tag (MNP-5 Microcom, in situ)
+void applyRLE(vector<uint8_t> &vec);
+
+// recover the given RLE-encoded data to a new vector
+vector<uint8_t> revertRLE(vector<uint8_t> &vec);

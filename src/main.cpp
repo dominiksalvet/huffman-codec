@@ -37,7 +37,7 @@ void cerrh(const char *s) {
 }
 
 // compress image based on several given options
-// data is preceded with header: <64b-pixel-count><1b-diff-model>
+// data is preceded with header: <64b-byte-count><1b-diff-model>
 vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t imgWidth)
 {
     // load input file to internal representation vector
@@ -55,10 +55,11 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
         exit(6);
     }
 
-    // apply differential model
+    // perform required transformations
     if (useModel) {
         applyDiffModel(inData);
     }
+    applyRLE(inData);
 
     // create the Huffman FGK tree
     HuffTree huffTree; // call default contructor
@@ -81,7 +82,7 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
     }
 
     vector<uint8_t> outData;
-    // header part <64b-pixel-count> to indicated total number of encoded pixels
+    // header part <64b-byte-count> to indicated total number of encoded bytes
     for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
         outData.push_back(inData.size() >> (CHAR_BIT * i));
     }
@@ -102,9 +103,9 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
 // it respects the header as described in the compress function comments
 vector<uint8_t> decompress(ifstream &ifs)
 {
-    // read total pixel count
-    uint64_t pixelCount;
-    ifs.read((char *)&pixelCount, sizeof(uint64_t));
+    // read total byte count to decode
+    uint64_t byteCount;
+    ifs.read((char *)&byteCount, sizeof(uint64_t));
     if (!ifs)
     {
         cerr << "ERROR: invalid compressed file header\n";
@@ -127,7 +128,7 @@ vector<uint8_t> decompress(ifstream &ifs)
     HuffTree huffTree;
 
     vector<uint8_t> outData;
-    for (uint64_t i = 0; i < pixelCount; i++)
+    for (uint64_t i = 0; i < byteCount; i++)
     {
         int decResult = huffTree.decode(&inData);
         if (decResult == -1)
@@ -141,6 +142,8 @@ vector<uint8_t> decompress(ifstream &ifs)
         outData.push_back(symbol);
     }
 
+    // revert appropriate transformations
+    outData = revertRLE(outData);
     if (modelUsed) {
         revertDiffModel(outData);
     }

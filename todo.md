@@ -16,4 +16,4 @@
 * `[x]` use file header when compression/decompression
 * `[x]` check supported file size limit and other limits (e.g., `freq`), check all `int`, etc.
 * `[x]` diff model may not require 9 bits
-* `[ ]` add plain RLE scanning
+* `[x]` add plain RLE scanning
