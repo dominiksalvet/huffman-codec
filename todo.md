@@ -22,4 +22,4 @@
 * `[ ]` oddelat nejake veci z compress a decompress funkce
 * `[ ]` check block RLE very carefully
 * `[ ]` width and height may not be the same
-* `[ ]` use adaptive block size??
+* `[ ]` use adaptive block size/find optimal size
