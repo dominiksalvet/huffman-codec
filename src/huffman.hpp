@@ -1,7 +1,7 @@
 // author: Dominik Salvet
 // login: xsalve03
 // date: 2022-04-20
-// filename: huff.hpp
+// filename: huffman.hpp
 // summary: Header file for Huffman FGK tree and helper functions.
 
 #pragma once

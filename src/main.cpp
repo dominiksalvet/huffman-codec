@@ -2,8 +2,8 @@
 // login: xsalve03
 // date: 2022-04-20
 // filename: main.cpp
-// summary: Simple Huffman codec with multiple options.
-//          Assumes 8-bit grayscale format of input data.
+// summary: Adaptive Huffman codec with multiple options. It works with any file,
+//          having extra features for 2D data (e.g., 8-bit grayscale images).
 
 #include <iostream>
 #include <unistd.h>
@@ -18,16 +18,16 @@ using namespace std;
 
 const string HELP_MESSAGE =
 "USAGE:\n"
-"  huff_codec [-cma] -i IFILE [-o OFILE] [-w WIDTH]\n"
+"  huff_codec [-cma] [-w WIDTH] -i IFILE [-o OFILE]\n"
 "  huff_codec -d -i IFILE [-o OFILE] | -h\n"
 "\n"
 "OPTION:\n"
 "  -c/-d  perform compression/decompression\n"
-"  -m     use model for image preprocessing\n"
-"  -a     use adaptive scanning\n"
+"  -m     use differential model for preprocessing\n"
+"  -a     use adaptive block RLE (default: RLE)\n"
+"  -w     width of 2D data (default: 512, disable: 1)\n"
 "  -i     input file path\n"
 "  -o     output file path (default: b.out)\n"
-"  -w     used image width (default: 512)\n"
 "  -h     show this help\n";
 
 
@@ -36,9 +36,12 @@ void cerrh(const char *s) {
     cerr << s << "try 'huff_codec -h' for more information\n";
 }
 
-// compress image based on several given options
+// compress data based on several given options
 // data is preceded with header: <64b-byte-count><1b-diff-model>
-vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t imgWidth)
+vector<uint8_t> compress(
+    ifstream& ifs, bool useDiffModel,
+    bool useAdaptRLE,
+    uint64_t matrixWidth)
 {
     // load input file to internal representation vector
     vector<uint8_t> inData;
@@ -48,25 +51,25 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
     }
     ifs.close();
 
-    // check valid image resolution
-    if ((inData.size() % imgWidth) != 0)
+    // check valid matrix size
+    if ((inData.size() % matrixWidth) != 0)
     {
-        cerr << "ERROR: invalid resolution of input image detected\n";
+        cerr << "ERROR: invalid size of input 2D data detected\n";
         exit(6);
     }
 
     // perform required transformations
-    if (useModel) {
+    if (useDiffModel) {
         applyDiffModel(inData);
     }
-    applyRLE(inData);
+    inData = applyRLE(inData);
 
     // create the Huffman FGK tree
     HuffTree huffTree; // call default contructor
 
     vector<bool> outBits;
     // header part <1b-diff-model> to indicate whether diff model was used
-    outBits.push_back(useModel);
+    outBits.push_back(useDiffModel);
 
     // encode input data to bit vector
     for (uint8_t symbol : inData)
@@ -99,7 +102,7 @@ vector<uint8_t> compress(ifstream& ifs, bool useModel, bool adaptScan, uint64_t 
     return outData;
 }
 
-// decompress image of the given input stream (based on its header)
+// decompress data of the given input stream (based on its header)
 // it respects the header as described in the compress function comments
 vector<uint8_t> decompress(ifstream &ifs)
 {
@@ -109,6 +112,7 @@ vector<uint8_t> decompress(ifstream &ifs)
     if (!ifs)
     {
         cerr << "ERROR: invalid compressed file header\n";
+        ifs.close(); // close file handler before exit
         exit(8);
     }
 
@@ -122,7 +126,7 @@ vector<uint8_t> decompress(ifstream &ifs)
     }
     ifs.close();
     // check where diff model was used
-    bool modelUsed = inData.front(); inData.pop(); // remove from queue
+    bool diffModelUsed = inData.front(); inData.pop(); // remove from queue
 
     // create the Huffman FGK tree
     HuffTree huffTree;
@@ -144,7 +148,7 @@ vector<uint8_t> decompress(ifstream &ifs)
 
     // revert appropriate transformations
     outData = revertRLE(outData);
-    if (modelUsed) {
+    if (diffModelUsed) {
         revertDiffModel(outData);
     }
 
@@ -158,11 +162,12 @@ void writeOutData(const vector<uint8_t> &vec, const string &filePath)
     if (ofs.fail())
     {
         cerr << "ERROR: cannot write to " << filePath << " output file\n";
+        ofs.close(); // close file handler before exit
         exit(7);
     }
 
     ofs.write((char *) vec.data(), vec.size());
-    ofs.close();
+    // ofs will be closed automatically (end of this scope)
 }
 
 
@@ -171,12 +176,12 @@ int main(int argc, char *argv[])
 {
     // default setup
     bool useCompr = true;
-    bool useModel = false;
-    bool adaptScan = false;
+    bool useDiffModel = false;
+    bool useAdaptRLE = false;
 
     string ifp; // input file path (empty by default constructor)
     string ofp = "b.out"; // default path
-    uint64_t imgWidth = 512; // default value
+    uint64_t matrixWidth = 512; // default value
 
     // argument processing
     // options are designed to be more tolerant (yet they meet the assignment)
@@ -187,11 +192,11 @@ int main(int argc, char *argv[])
         {
         case 'c': useCompr = true; break;
         case 'd': useCompr = false; break;
-        case 'm': useModel = true; break;
-        case 'a': adaptScan = true; break;
+        case 'm': useDiffModel = true; break;
+        case 'a': useAdaptRLE = true; break;
         case 'i': ifp = optarg; break;
         case 'o': ofp = optarg; break;
-        case 'w': imgWidth = stoull(optarg); break;
+        case 'w': matrixWidth = stoull(optarg); break;
         case 'h':
             cout << HELP_MESSAGE;
             return 0; break;
@@ -210,9 +215,9 @@ int main(int argc, char *argv[])
         cerrh("ERROR: no input file path provided\n");
         return 3;
     }
-    if (useCompr && imgWidth == 0)
+    if (useCompr && matrixWidth == 0)
     {
-        cerrh("ERROR: invalid image width\n");
+        cerrh("ERROR: invalid 2D data width\n");
         return 4;
     }
 
@@ -227,7 +232,7 @@ int main(int argc, char *argv[])
     // perform required operation
     vector<uint8_t> outData; // alway array of bytes
     if (useCompr) {
-        outData = compress(ifs, useModel, adaptScan, imgWidth);
+        outData = compress(ifs, useDiffModel, useAdaptRLE, matrixWidth);
     } else {
         outData = decompress(ifs);
     }

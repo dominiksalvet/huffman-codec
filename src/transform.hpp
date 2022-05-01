@@ -20,8 +20,8 @@ void applyDiffModel(vector<uint8_t> &vec);
 // also uses the two's complement properties (overflow)
 void revertDiffModel(vector<uint8_t> &vec);
 
-// apply run-length encoding without explicit tag (MNP-5 Microcom, in situ)
-void applyRLE(vector<uint8_t> &vec);
+// apply run-length encoding without explicit tag (MNP-5 Microcom format)
+vector<uint8_t> applyRLE(const vector<uint8_t> &vec);
 
-// recover the given RLE-encoded data to a new vector
-vector<uint8_t> revertRLE(vector<uint8_t> &vec);
+// recover the given RLE-encoded data
+vector<uint8_t> revertRLE(const vector<uint8_t> &vec);

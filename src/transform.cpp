@@ -28,12 +28,12 @@ void revertDiffModel(vector<uint8_t> &vec)
     }
 }
 
-void applyRLE(vector<uint8_t> &vec)
+vector<uint8_t> applyRLE(const vector<uint8_t> &vec)
 {
+    vector<uint8_t> finalVec; // new vector
+    
     uint8_t matchByte = 0;
     int matchCount = 0;
-    size_t curIndex = 0;
-
     for (size_t i = 0; i < vec.size(); i++)
     {
         uint8_t curByte = vec[i];
@@ -43,44 +43,34 @@ void applyRLE(vector<uint8_t> &vec)
         {
             matchCount++;
 
-            if (matchCount <= 3)
-            {
-                vec[curIndex] = curByte;
-                curIndex++;
+            if (matchCount <= 3) {
+                finalVec.push_back(curByte);
             }
             else if (matchCount == 258) // 255 + 3
             {
-                vec[curIndex] = 255;
+                finalVec.push_back(255);
                 matchCount = 0; // reset
-                curIndex++;
             }
         }
         else
         {
-            if (matchCount >= 3)
-            {
+            if (matchCount >= 3) {
                 // preceding three characters are encoded directly
-                vec[curIndex] = matchCount - 3;
-                curIndex++;
-                vec[curIndex] = curByte;
-            }
-            else {
-                vec[curIndex] = curByte;
+                finalVec.push_back(matchCount - 3);
             }
 
+            finalVec.push_back(curByte);
             matchByte = curByte;
             matchCount = 1;
-            curIndex++;
         }
     }
 
-    // final resize (since it may be significantly smaller)
-    vec.resize(curIndex);
+    return finalVec;
 }
 
-vector<uint8_t> revertRLE(vector<uint8_t> &vec)
+vector<uint8_t> revertRLE(const vector<uint8_t> &vec)
 {
-    vector<uint8_t> finalVec; // need new vector
+    vector<uint8_t> finalVec; // new vector
 
     uint8_t matchByte = 0;
     int matchCount = 0;

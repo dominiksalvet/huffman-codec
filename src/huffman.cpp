@@ -1,7 +1,7 @@
 // author: Dominik Salvet
 // login: xsalve03
 // date: 2022-04-20
-// filename: huff.cpp
+// filename: huffman.cpp
 // summary: The implementation of Huffman FGK tree and helper functions.
 
 #include "huffman.hpp"
