@@ -39,7 +39,8 @@ void cerrh(const char *s) {
 // compress data based on several given options
 // data is preceded with header: <64b-byte-count><1b-diff-model>
 vector<uint8_t> compress(
-    ifstream& ifs, bool useDiffModel,
+    ifstream& ifs,
+    bool useDiffModel,
     bool useAdaptRLE,
     uint64_t matrixWidth)
 {
