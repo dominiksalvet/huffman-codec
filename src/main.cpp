@@ -14,6 +14,7 @@
 
 #include "transform.hpp"
 #include "huffman.hpp"
+#include "headers.hpp"
 
 using namespace std;
 
@@ -34,58 +35,6 @@ const string HELP_MESSAGE =
 "  -h     show this help\n";
 
 
-// adds bytes of compressed file header to given vector, the format is following:
-//   ordinary parts: <64b-byte-count><8b-flags>
-//   optional following parts: <64b-matrix-width><block-scan-dirs>
-void createHeader(
-    vector<uint8_t> &vec,
-    uint64_t byteCount,
-    bool useDiffModel,
-    bool useAdaptRLE,
-    uint64_t matrixWidth,
-    vector<bool> scanDirs)
-{
-    // header part <64b-byte-count> to indicate total number of encoded bytes
-    for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        vec.push_back(byteCount >> (CHAR_BIT * i));
-    }
-    vec.push_back(
-        // header part <8b-flags> [x-------] to indicate whether diff model was used
-        uint8_t(useDiffModel) << 7 |
-        // header part <8b-flags> [-x------] to indicate whether adaptive RLE was used
-        uint8_t(useAdaptRLE) << 6
-    );
-    if (useAdaptRLE) // optional header part
-    {
-        // header part <64b-matrix-width> to indicate 2D data width
-        for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-            vec.push_back(matrixWidth >> (CHAR_BIT * i));
-        }
-        // header part <block-scan-dirs> to indicate scan direction for each block
-        // horizontal scan - 1, vertical scan - 0
-        uint8_t curByte = 0;
-        uint64_t bitCount = 0;
-        for (bool scanDir : scanDirs) // scan direction bits to bytes
-        {
-            curByte = (curByte << 1) | scanDir;
-            bitCount++;
-
-            if (bitCount % CHAR_BIT == 0) {
-                vec.push_back(curByte);
-            }
-        }
-        // scale to byte resolution, so adding remaining bits if needed
-        if (bitCount % CHAR_BIT != 0)
-        {
-            do {
-                curByte = (curByte << 1) | 0; // value does not matter
-                bitCount++;
-            } while (bitCount % CHAR_BIT != 0);
-            vec.push_back(curByte);
-        }
-    }
-}
-
 // compress data based on several given options
 vector<uint8_t> compress(
     ifstream& ifs,
@@ -94,7 +43,7 @@ vector<uint8_t> compress(
     uint64_t matrixWidth)
 {
     // load input file to internal representation vector
-    vector<uint8_t> inData;
+    vector<uint8_t> inData; // input data for Huffman tree (may be transformed before)
     int c;
     while ((c = ifs.get()) != EOF) {
         inData.push_back(c);
@@ -113,10 +62,15 @@ vector<uint8_t> compress(
     if (useDiffModel) {
         applyDiffModel(inData);
     }
-    pair<vector<bool>, vector<uint8_t>> adaptRLEPair;
     if (useAdaptRLE) {
+        pair<vector<bool>, vector<uint8_t>> adaptRLEPair;
         adaptRLEPair = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
-        inData = get<1>(adaptRLEPair); // get first item from the pair
+        // first create header for adaptive RLE
+        inData = createAdaptRLEHeader(matrixWidth, matrixHeight, get<0>(adaptRLEPair));
+
+        // then append block data
+        vector<uint8_t> blocks = get<1>(adaptRLEPair);
+        inData.insert(inData.end(), blocks.begin(), blocks.end());
     }
     else {
         inData = applyRLE(inData);
@@ -124,15 +78,8 @@ vector<uint8_t> compress(
     vector<bool> outBits = applyHuffman(inData);
 
     vector<uint8_t> outData;
-    // first create header (see the function comment for header format)
-    // none parts of header are compressed since the appropriate configuration use should
-    // lead to the header binary format, which is hard to be effectively compressed
-    createHeader(
-        outData,
-        inData.size(),
-        useDiffModel, useAdaptRLE, // flags
-        matrixWidth,
-        get<0>(adaptRLEPair));
+    // first header for Huffman coding
+    outData = createHuffHeader(inData.size(), useDiffModel, useAdaptRLE);
 
     // then data; convert bit vector to byte array
     for (size_t i = 0; i < outBits.size(); i += CHAR_BIT) {
@@ -153,15 +100,16 @@ vector<uint8_t> decompress(ifstream &ifs)
     // read total byte count to decode
     uint64_t byteCount;
     ifs.read((char *)&byteCount, sizeof(uint64_t));
-    // read diff model flag
+    // read flags
     int c = ifs.get();
-    if (c == EOF)
+    bool diffModelUsed = c >> 7;
+    bool adaptRLEUsed = c >> 6;
+    if (c == EOF) // check if any errors during header reading
     {
         cerr << "ERROR: invalid compressed file header\n";
         ifs.close(); // close file handler before exit
         exit(8);
     }
-    bool diffModelUsed = c >> 7;
 
     // load input file to internal representation vector
     queue<bool> inData;
