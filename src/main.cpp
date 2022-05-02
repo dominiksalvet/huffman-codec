@@ -16,6 +16,8 @@
 
 using namespace std;
 
+#define RLE_BLOCK_SIZE 8
+
 const string HELP_MESSAGE =
 "USAGE:\n"
 "  huff_codec [-cma] [-w WIDTH] -i IFILE [-o OFILE]\n"
@@ -37,7 +39,7 @@ void cerrh(const char *s) {
 }
 
 // compress data based on several given options
-// data is preceded with header: <64b-byte-count><1b-diff-model>
+// data is preceded with header: <64b-byte-count><8b-flags>
 vector<uint8_t> compress(
     ifstream& ifs,
     bool useDiffModel,
@@ -58,38 +60,27 @@ vector<uint8_t> compress(
         cerr << "ERROR: invalid size of input 2D data detected\n";
         exit(6);
     }
+    uint64_t matrixHeight = inData.size() / matrixWidth;
 
     // perform required transformations
     if (useDiffModel) {
         applyDiffModel(inData);
     }
-    inData = applyRLE(inData);
-
-    // create the Huffman FGK tree
-    HuffTree huffTree; // call default contructor
-
-    vector<bool> outBits;
-    // header part <1b-diff-model> to indicate whether diff model was used
-    outBits.push_back(useDiffModel);
-
-    // encode input data to bit vector
-    for (uint8_t symbol : inData)
-    {
-        vector<bool> symbolCode = huffTree.encode(symbol);
-        // append symbol code to the existing code
-        outBits.insert(outBits.end(), symbolCode.begin(), symbolCode.end());
-        huffTree.update(symbol);
+    if (useAdaptRLE) {
+        inData = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
     }
-    // add remaining bits so their final count is divisible by bits in symbol
-    while (outBits.size() % CHAR_BIT != 0) {
-        outBits.push_back(0); // value does not matter
+    else {
+        inData = applyRLE(inData);
     }
+    vector<bool> outBits = applyHuffman(inData);
 
     vector<uint8_t> outData;
     // header part <64b-byte-count> to indicated total number of encoded bytes
     for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
         outData.push_back(inData.size() >> (CHAR_BIT * i));
     }
+    // header part <8b-flags> [x-------] to indicate whether diff model was used
+    outData.push_back(uint8_t(useDiffModel) << 7);
 
     // convert bit vector to byte array
     for (size_t i = 0; i < outBits.size(); i += 8) {
@@ -110,44 +101,27 @@ vector<uint8_t> decompress(ifstream &ifs)
     // read total byte count to decode
     uint64_t byteCount;
     ifs.read((char *)&byteCount, sizeof(uint64_t));
-    if (!ifs)
+    // read diff model flag
+    int c = ifs.get();
+    if (c == EOF)
     {
         cerr << "ERROR: invalid compressed file header\n";
         ifs.close(); // close file handler before exit
         exit(8);
     }
+    bool diffModelUsed = c >> 7;
 
     // load input file to internal representation vector
     queue<bool> inData;
-    int c;
     while ((c = ifs.get()) != EOF) {
         for (int i = 0; i < CHAR_BIT; i++) {
             inData.push((c >> (CHAR_BIT - i - 1) & 0x01));
         }
     }
     ifs.close();
-    // check where diff model was used
-    bool diffModelUsed = inData.front(); inData.pop(); // remove from queue
-
-    // create the Huffman FGK tree
-    HuffTree huffTree;
-
-    vector<uint8_t> outData;
-    for (uint64_t i = 0; i < byteCount; i++)
-    {
-        int decResult = huffTree.decode(&inData);
-        if (decResult == -1)
-        {
-            cerr << "ERROR: invalid compressed file contents\n";
-            exit(9);
-        }
-        uint8_t symbol = decResult;
-    
-        huffTree.update(symbol);
-        outData.push_back(symbol);
-    }
 
     // revert appropriate transformations
+    vector<uint8_t> outData = revertHuffman(inData, byteCount);
     outData = revertRLE(outData);
     if (diffModelUsed) {
         revertDiffModel(outData);
