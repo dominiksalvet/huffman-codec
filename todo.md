@@ -24,3 +24,6 @@
 * `[ ]` use adaptive block size/find optimal size
 * `[x]` change header -- keep one byte for flags
 * `[ ]` block size must be lower than RLE block size
+* `[ ]` ignore matrix width when no adaptive RLE
+* `[ ]` pridat vice pruchodu??
+* `[ ]` check whether `getBlockCount()` is still required
