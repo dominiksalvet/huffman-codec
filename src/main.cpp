@@ -63,16 +63,6 @@ vector<uint8_t> huffCompress(
     }
     if (useAdaptRLE) {
         inData = applyAdaptRLE(inData, matrixWidth, matrixHeight);
-
-        // pair<vector<bool>, vector<uint8_t>> adaptRLEPair;
-        // adaptRLEPair = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
-        // // first create header for adaptive RLE
-        // inData = createAdaptRLEHeader(
-        //     matrixWidth, matrixHeight, RLE_BLOCK_SIZE, get<0>(adaptRLEPair));
-
-        // // then append block data
-        // vector<uint8_t> blocks = get<1>(adaptRLEPair);
-        // inData.insert(inData.end(), blocks.begin(), blocks.end());
     }
     else {
         inData = applyRLE(inData);

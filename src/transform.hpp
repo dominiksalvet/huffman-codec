@@ -13,7 +13,8 @@
 using std::deque;
 using std::vector;
 
-#define RLE_BLOCK_SIZE 8
+#define INIT_RLE_BLOCK_SIZE 8
+#define MAX_RLE_DOUBLING_STEPS 7
 
 
 // transform pixel values to their differences (in situ)
@@ -28,7 +29,8 @@ vector<uint8_t> applyRLE(const vector<uint8_t> &vec);
 // recover the given RLE-encoded data
 vector<uint8_t> revertRLE(const deque<uint8_t> &deq);
 
-// apply adaptive block RLE based on given arguments (also creates its header)
+// apply adaptive block RLE with the best found block size (automatically)
+// it also creates its header (besides others, block size is stored there)
 vector<uint8_t> applyAdaptRLE(
     const vector<uint8_t> &vec,
     uint64_t matrixWidth,
@@ -41,11 +43,3 @@ deque<uint8_t> revertHuffman(deque<bool> &deq, uint64_t byteCount);
 
 // returns the total number of blocks in the matrix
 uint64_t getBlockCount(uint64_t matrixWidth, uint64_t matrixHeight, uint64_t blockSize);
-// return vector of items in the given block with selected scan direction
-// we give block index -> it returns vector of its items
-vector<uint8_t> getBlockVector(
-    const vector<uint8_t> &vec, // complete vector of data
-    uint64_t matrixWidth,
-    uint64_t blockSize,
-    uint64_t blockIndex, // index of the block in the vector
-    bool horScan); // horizontal or vertical scanning

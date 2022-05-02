@@ -14,6 +14,78 @@
 
 using std::cerr;
 
+// -------------------------- HIDDEN HELPER FUNCTIONS ------------------------------
+
+// return vector of items in the given block with selected scan direction
+// we give block index -> it returns vector of its items
+vector<uint8_t> getBlockVector(
+    const vector<uint8_t> &vec,
+    uint64_t matrixWidth,
+    uint64_t blockSize,
+    uint64_t blockIndex,
+    bool horScan)
+{
+    // compute block base address
+    uint64_t blocksInLine = matrixWidth / blockSize;
+    uint64_t blockColumnBase = (blockIndex % blocksInLine) * blockSize;
+    uint64_t blockRowBase = (blockIndex / blocksInLine) * matrixWidth * blockSize;
+    uint64_t blockBase = blockRowBase + blockColumnBase;
+
+    vector<uint8_t> blockVec;
+    for (uint64_t i = 0; i < blockSize; i++)
+    {
+        for (uint64_t j = 0; j < blockSize; j++)
+        {
+            uint64_t xIndex = horScan ? j : i;
+            uint64_t yIndex = horScan ? i : j;
+
+            blockVec.push_back(vec[blockBase + (yIndex * matrixWidth) + xIndex]);
+        }
+    }
+
+    return blockVec;
+}
+
+// apply adaptive block RLE based on given arguments (also creates its header)
+vector<uint8_t> applyAdaptRLE(
+    const vector<uint8_t> &vec,
+    uint64_t matrixWidth,
+    uint64_t matrixHeight,
+    uint64_t blockSize)
+{
+    vector<bool> scanDirs; // scan directions
+    vector<uint8_t> blockData;
+
+    uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, blockSize);
+    vector<uint8_t> horVec, verVec; // horizontal, vertical order
+    for (uint64_t i = 0; i < blockCount; i++)
+    {
+        horVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, true));
+        verVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, false));
+
+        // check which scan direction is better
+        if (horVec.size() <= verVec.size())
+        {
+            scanDirs.push_back(1);
+            blockData.insert(blockData.end(), horVec.begin(), horVec.end());
+        }
+        else
+        {
+            scanDirs.push_back(0);
+            blockData.insert(blockData.end(), verVec.begin(), verVec.end());
+        }
+    }
+
+    // first create header for adaptive RLE
+    vector<uint8_t> finalVec = createAdaptRLEHeader(
+        matrixWidth, matrixHeight, blockSize, scanDirs);
+    
+    // then append block data
+    finalVec.insert(finalVec.end(), blockData.begin(), blockData.end());
+
+    return finalVec;
+}
+
 // -------------------------- TRANSFORMATION ---------------------------------
 
 void applyDiffModel(vector<uint8_t> &vec)
@@ -115,37 +187,35 @@ vector<uint8_t> applyAdaptRLE(
     uint64_t matrixWidth,
     uint64_t matrixHeight)
 {
-    vector<bool> scanDirs; // scan directions
-    vector<uint8_t> blockData;
-
-    uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
-    vector<uint8_t> horVec, verVec; // horizontal, vertical order
-    for (uint64_t i = 0; i < blockCount; i++)
+    uint64_t curBlockSize = INIT_RLE_BLOCK_SIZE;
+    if (matrixWidth < curBlockSize || matrixHeight < curBlockSize)
     {
-        horVec = applyRLE(getBlockVector(vec, matrixWidth, RLE_BLOCK_SIZE, i, true));
-        verVec = applyRLE(getBlockVector(vec, matrixWidth, RLE_BLOCK_SIZE, i, false));
-
-        // check which scan direction is better
-        if (horVec.size() <= verVec.size())
-        {
-            scanDirs.push_back(1);
-            blockData.insert(blockData.end(), horVec.begin(), horVec.end());
-        }
-        else
-        {
-            scanDirs.push_back(0);
-            blockData.insert(blockData.end(), verVec.begin(), verVec.end());
-        }
+        cerr << "ERROR: too small 2D data dimensions\n";
+        exit(12);
     }
 
-    // first create header for adaptive RLE
-    vector<uint8_t> finalVec = createAdaptRLEHeader(
-        matrixWidth, matrixHeight, RLE_BLOCK_SIZE, scanDirs);
-    
-    // then append block data
-    finalVec.insert(finalVec.end(), blockData.begin(), blockData.end());
+    // we will find the most optimal block size
+    vector<uint8_t> bestVec;
+    // first step before the loop
+    bestVec = applyAdaptRLE(vec, matrixWidth, matrixHeight, curBlockSize);
 
-    return finalVec;
+    curBlockSize *= 2;
+    int doublingSteps = 1; // number of doubling block size
+    vector<uint8_t> curVec;
+    while (doublingSteps <= MAX_RLE_DOUBLING_STEPS &&
+           curBlockSize <= matrixWidth && curBlockSize <= matrixHeight)
+    {
+        curVec = applyAdaptRLE(vec, matrixWidth, matrixHeight, curBlockSize);
+
+        if (curVec.size() < bestVec.size()) {
+            bestVec = curVec;
+        }
+
+        curBlockSize *= 2;
+        doublingSteps++;
+    }
+
+    return bestVec;
 }
 
 vector<bool> applyHuffman(const vector<uint8_t> &vec)
@@ -201,32 +271,4 @@ uint64_t getBlockCount(
     uint64_t blockSize)
 {
     return (matrixWidth / blockSize) * (matrixHeight / blockSize);
-}
-
-vector<uint8_t> getBlockVector(
-    const vector<uint8_t> &vec,
-    uint64_t matrixWidth,
-    uint64_t blockSize,
-    uint64_t blockIndex,
-    bool horScan)
-{
-    // compute block base address
-    uint64_t blocksInLine = matrixWidth / blockSize;
-    uint64_t blockColumnBase = (blockIndex % blocksInLine) * blockSize;
-    uint64_t blockRowBase = (blockIndex / blocksInLine) * matrixWidth * blockSize;
-    uint64_t blockBase = blockRowBase + blockColumnBase;
-
-    vector<uint8_t> blockVec;
-    for (uint64_t i = 0; i < blockSize; i++)
-    {
-        for (uint64_t j = 0; j < blockSize; j++)
-        {
-            uint64_t xIndex = horScan ? j : i;
-            uint64_t yIndex = horScan ? i : j;
-
-            blockVec.push_back(vec[blockBase + (yIndex * matrixWidth) + xIndex]);
-        }
-    }
-
-    return blockVec;
 }
