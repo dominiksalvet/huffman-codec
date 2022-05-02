@@ -8,23 +8,20 @@
 
 #include <iostream>
 #include <climits>
-#include <utility>
 
 #include "huffman.hpp"
 
 using std::cerr;
-using std::pair;
-
 
 // -------------------------- TRANSFORMATION ---------------------------------
 
 void applyDiffModel(vector<uint8_t> &vec)
 {
     uint8_t prevVal = 0;
-    for (size_t i = 0; i < vec.size(); i++)
+    for (uint8_t &vecItem : vec)
     {
-        uint8_t curVal = vec[i];
-        vec[i] = (curVal - prevVal); // truncated result of underflow
+        uint8_t curVal = vecItem;
+        vecItem = (curVal - prevVal); // truncated result of underflow
         prevVal = curVal;
     }
 }
@@ -32,10 +29,10 @@ void applyDiffModel(vector<uint8_t> &vec)
 void revertDiffModel(vector<uint8_t> &vec)
 {
     uint8_t prevVal = 0;
-    for (size_t i = 0; i < vec.size(); i++)
+    for (uint8_t &vecItem : vec)
     {
-        vec[i] += prevVal; // may overflow (truncated)
-        prevVal = vec[i];
+        vecItem += prevVal; // may overflow (truncated)
+        prevVal = vecItem;
     }
 }
 
@@ -45,12 +42,12 @@ vector<uint8_t> applyRLE(const vector<uint8_t> &vec)
     
     uint8_t matchByte = 0;
     int matchCount = 0;
-    for (size_t i = 0; i < vec.size(); i++)
+    for (auto it = vec.begin(); it != vec.end(); ++it)
     {
-        uint8_t curByte = vec[i];
+        uint8_t curByte = *it;
 
         // exclude the first (or reset) and last iteration from matching
-        if (curByte == matchByte && matchCount != 0 && i != vec.size() - 1)
+        if (curByte == matchByte && matchCount != 0 && next(it) != vec.end())
         {
             matchCount++;
 
@@ -79,13 +76,13 @@ vector<uint8_t> applyRLE(const vector<uint8_t> &vec)
     return finalVec;
 }
 
-vector<uint8_t> revertRLE(const vector<uint8_t> &vec)
+vector<uint8_t> revertRLE(const deque<uint8_t> &deq)
 {
     vector<uint8_t> finalVec; // new vector
 
     uint8_t matchByte = 0;
     int matchCount = 0;
-    for (uint8_t curByte : vec)
+    for (uint8_t curByte : deq)
     {
         if (matchCount == 3)
         {
@@ -167,14 +164,14 @@ vector<bool> applyHuffman(const vector<uint8_t> &vec)
     return finalVec;
 }
 
-vector<uint8_t> revertHuffman(queue<bool> &vec, uint64_t byteCount)
+deque<uint8_t> revertHuffman(deque<bool> &deq, uint64_t byteCount)
 {
     HuffTree huffTree; // create the Huffman FGK tree
 
-    vector<uint8_t> finalVec;
+    deque<uint8_t> finalDeq;
     for (uint64_t i = 0; i < byteCount; i++)
     {
-        int decResult = huffTree.decode(&vec);
+        int decResult = huffTree.decode(&deq);
         if (decResult == -1)
         {
             cerr << "ERROR: invalid compressed file contents\n";
@@ -183,10 +180,10 @@ vector<uint8_t> revertHuffman(queue<bool> &vec, uint64_t byteCount)
         uint8_t symbol = decResult;
     
         huffTree.update(symbol);
-        finalVec.push_back(symbol);
+        finalDeq.push_back(symbol);
     }
 
-    return finalVec;
+    return finalDeq;
 }
 
 // -------------------------- HELPER FUNCTIONS ---------------------------------

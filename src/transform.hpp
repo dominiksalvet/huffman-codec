@@ -8,11 +8,10 @@
 
 #include <vector>
 #include <cstdint>
-#include <queue>
-#include <utility>
+#include <deque>
 
+using std::deque;
 using std::vector;
-using std::queue;
 using std::pair;
 
 
@@ -26,7 +25,7 @@ void revertDiffModel(vector<uint8_t> &vec);
 // apply run-length encoding without explicit tag (MNP-5 Microcom format)
 vector<uint8_t> applyRLE(const vector<uint8_t> &vec);
 // recover the given RLE-encoded data
-vector<uint8_t> revertRLE(const vector<uint8_t> &vec);
+vector<uint8_t> revertRLE(const deque<uint8_t> &deq);
 
 // apply adaptive block RLE based on given arguments
 // returns a pair of:
@@ -40,8 +39,8 @@ pair<vector<bool>, vector<uint8_t>> applyAdaptRLE(
 
 // apply Huffman FGK coding and return bit vector
 vector<bool> applyHuffman(const vector<uint8_t> &vec);
-// revert Huffman coding of given bit vector and expected count of bytes
-vector<uint8_t> revertHuffman(queue<bool> &vec, uint64_t byteCount);
+// revert Huffman coding of given bits and expected count of bytes
+deque<uint8_t> revertHuffman(deque<bool> &deq, uint64_t byteCount);
 
 // returns the total number of blocks in the matrix
 uint64_t getBlockCount(

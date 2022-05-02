@@ -12,7 +12,6 @@
 #include "transform.hpp"
 
 using std::cerr;
-using std::make_tuple;
 
 
 vector<uint8_t> createAdaptRLEHeader(

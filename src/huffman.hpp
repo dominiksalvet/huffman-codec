@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <vector>
 #include <cstdint>
-#include <queue>
 #include <ostream>
+#include <deque>
+#include <vector>
 
-using std::vector;
-using std::queue;
+using std::deque;
 using std::ostream;
+using std::vector;
 
 #define MAX_SYMBOLS 256 // max possible symbols
 #define BITS_IN_SYMBOL 8 // number of bits in one symbol
@@ -47,8 +47,8 @@ public:
     // encode given symbol based on current tree
     vector<bool> encode(uint8_t symbol);
     // decode and extract one symbol from given code
-    // return -1 when unexpected end of input stream from the queue
-    int decode(queue<bool> *const code);
+    // return -1 when unexpected end of input stream from the code
+    int decode(deque<bool> *const code);
 
     // update the tree based on given symbol
     void update(uint8_t symbol);

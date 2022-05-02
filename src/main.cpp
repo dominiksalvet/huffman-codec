@@ -8,12 +8,13 @@
 #include <iostream>
 #include <unistd.h>
 #include <fstream>
-#include <vector>
 #include <climits>
+#include <vector>
+#include <deque>
 #include <utility>
+#include <cstdint>
 
 #include "transform.hpp"
-#include "huffman.hpp"
 #include "headers.hpp"
 
 using namespace std;
@@ -112,18 +113,19 @@ vector<uint8_t> decompress(ifstream &ifs)
         exit(8);
     }
 
-    // load input file to internal representation vector
-    queue<bool> inData;
+    // load input file
+    deque<bool> inData;
     while ((c = ifs.get()) != EOF) {
         for (int i = 0; i < CHAR_BIT; i++) {
-            inData.push((c >> (CHAR_BIT - i - 1) & 0x01));
+            inData.push_back((c >> (CHAR_BIT - i - 1) & 0x01));
         }
     }
     ifs.close();
 
     // revert appropriate transformations
-    vector<uint8_t> outData = revertHuffman(inData, byteCount);
-    outData = revertRLE(outData);
+    deque<uint8_t> huffDecoded = revertHuffman(inData, byteCount);
+    vector<uint8_t> outData;
+    outData = revertRLE(huffDecoded);
     if (diffModelUsed) {
         revertDiffModel(outData);
     }

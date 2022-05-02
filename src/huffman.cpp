@@ -56,7 +56,7 @@ vector<bool> HuffTree::encode(uint8_t symbol)
     return code;
 }
 
-int HuffTree::decode(queue<bool> *const code)
+int HuffTree::decode(deque<bool> *const code)
 {
     HuffNode *curNode = root;
     while (!isLeaf(curNode))
@@ -66,7 +66,7 @@ int HuffTree::decode(queue<bool> *const code)
         }
 
         // decision bit to choose the next node
-        bool decBit = code->front(); code->pop(); // pop from queue
+        bool decBit = code->front(); code->pop_front();
         curNode = decBit ? curNode->right : curNode->left;
     }
 
@@ -80,7 +80,7 @@ int HuffTree::decode(queue<bool> *const code)
                 return -1;
             }
 
-            bool curBit = code->front(); code->pop();
+            bool curBit = code->front(); code->pop_front();
             finalSymbol = (finalSymbol << 1) | curBit;
         }
     }
