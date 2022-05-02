@@ -8,10 +8,12 @@
 
 #include <iostream>
 #include <climits>
+#include <utility>
 
 #include "huffman.hpp"
 
 using std::cerr;
+using std::pair;
 
 
 // -------------------------- TRANSFORMATION ---------------------------------
@@ -110,12 +112,13 @@ vector<uint8_t> revertRLE(const vector<uint8_t> &vec)
     return finalVec;
 }
 
-vector<uint8_t> applyAdaptRLE(
+pair<vector<bool>, vector<uint8_t>> applyAdaptRLE(
     const vector<uint8_t> &vec,
     uint64_t matrixWidth,
     uint64_t matrixHeight,
     uint64_t blockSize)
 {
+    vector<bool> scanDirs; // scan directions
     vector<uint8_t> finalVec;
 
     uint64_t blockCount = (matrixWidth / blockSize) * (matrixHeight / blockSize);
@@ -125,15 +128,20 @@ vector<uint8_t> applyAdaptRLE(
         horVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, true));
         verVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, false));
 
-        // check which approach is better
-        if (horVec.size() <= verVec.size()) {
+        // check which scan direction is better
+        if (horVec.size() <= verVec.size())
+        {
+            scanDirs.push_back(1);
             finalVec.insert(finalVec.end(), horVec.begin(), horVec.end());
-        } else {
+        }
+        else
+        {
+            scanDirs.push_back(0);
             finalVec.insert(finalVec.end(), verVec.begin(), verVec.end());
         }
     }
 
-    return finalVec;
+    return make_pair(scanDirs, finalVec);
 }
 
 vector<bool> applyHuffman(const vector<uint8_t> &vec)
@@ -188,7 +196,7 @@ vector<uint8_t> getBlockVector(
     uint64_t matrixWidth,
     uint64_t blockSize,
     uint64_t blockIndex,
-    bool horApproach)
+    bool horScan)
 {
     // compute block base address
     uint64_t blocksInLine = matrixWidth / blockSize;
@@ -201,8 +209,8 @@ vector<uint8_t> getBlockVector(
     {
         for (uint64_t j = 0; j < blockSize; j++)
         {
-            uint64_t xIndex = horApproach ? j : i;
-            uint64_t yIndex = horApproach ? i : j;
+            uint64_t xIndex = horScan ? j : i;
+            uint64_t yIndex = horScan ? i : j;
 
             blockVec.push_back(vec[blockBase + (yIndex * matrixWidth) + xIndex]);
         }

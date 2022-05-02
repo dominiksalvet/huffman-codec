@@ -10,6 +10,7 @@
 #include <fstream>
 #include <vector>
 #include <climits>
+#include <utility>
 
 #include "transform.hpp"
 #include "huffman.hpp"
@@ -33,13 +34,38 @@ const string HELP_MESSAGE =
 "  -h     show this help\n";
 
 
-// redirect input to stderr, but also print a help hint
-void cerrh(const char *s) {
-    cerr << s << "try 'huff_codec -h' for more information\n";
+// adds bytes of compressed file header to given vector, the format is following:
+//   ordinary parts: <64b-byte-count><8b-flags>
+//   optional following parts: <64b-matrix-width><block-scan-dirs>
+void createHeader(
+    vector<uint8_t> &vec,
+    uint64_t byteCount,
+    bool useDiffModel,
+    bool useAdaptRLE,
+    uint64_t matrixWidth,
+    vector<bool> scanDirs)
+{
+    // header part <64b-byte-count> to indicate total number of encoded bytes
+    for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
+        vec.push_back(byteCount >> (CHAR_BIT * i));
+    }
+    vec.push_back(
+        // header part <8b-flags> [x-------] to indicate whether diff model was used
+        uint8_t(useDiffModel) << 7 |
+        // header part <8b-flags> [-x------] to indicate whether adaptive RLE was used
+        uint8_t(useAdaptRLE) << 6
+    );
+    // TODO: continue here
+    if (useAdaptRLE) // optional
+    {
+        // header part <64b-matrix-width> to indicate 2D data width
+        for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
+            vec.push_back(matrixWidth >> (CHAR_BIT * i));
+        }
+    }
 }
 
 // compress data based on several given options
-// data is preceded with header: <64b-byte-count><8b-flags>
 vector<uint8_t> compress(
     ifstream& ifs,
     bool useDiffModel,
@@ -66,8 +92,10 @@ vector<uint8_t> compress(
     if (useDiffModel) {
         applyDiffModel(inData);
     }
+    pair<vector<bool>, vector<uint8_t>> adaptRLEPair;
     if (useAdaptRLE) {
-        inData = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
+        adaptRLEPair = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
+        inData = get<1>(adaptRLEPair); // get first item from the pair
     }
     else {
         inData = applyRLE(inData);
@@ -75,14 +103,15 @@ vector<uint8_t> compress(
     vector<bool> outBits = applyHuffman(inData);
 
     vector<uint8_t> outData;
-    // header part <64b-byte-count> to indicated total number of encoded bytes
-    for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        outData.push_back(inData.size() >> (CHAR_BIT * i));
-    }
-    // header part <8b-flags> [x-------] to indicate whether diff model was used
-    outData.push_back(uint8_t(useDiffModel) << 7);
+    // first create header (see the function comment for header format)
+    createHeader(
+        outData,
+        inData.size(),
+        useDiffModel, useAdaptRLE, // flags
+        matrixWidth,
+        get<0>(adaptRLEPair));
 
-    // convert bit vector to byte array
+    // then data; convert bit vector to byte array
     for (size_t i = 0; i < outBits.size(); i += 8) {
         uint8_t curByte = 0;
         for (int j = 0; j < CHAR_BIT; j++) {
@@ -95,7 +124,7 @@ vector<uint8_t> compress(
 }
 
 // decompress data of the given input stream (based on its header)
-// it respects the header as described in the compress function comments
+// it respects the header format as described sooner
 vector<uint8_t> decompress(ifstream &ifs)
 {
     // read total byte count to decode
@@ -145,6 +174,11 @@ void writeOutData(const vector<uint8_t> &vec, const string &filePath)
     // ofs will be closed automatically (end of this scope)
 }
 
+
+// redirect input to stderr, but also print a help hint
+void cerrh(const char *s) {
+    cerr << s << "try 'huff_codec -h' for more information\n";
+}
 
 // entry point of program
 int main(int argc, char *argv[])

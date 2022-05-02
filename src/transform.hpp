@@ -9,9 +9,11 @@
 #include <vector>
 #include <cstdint>
 #include <queue>
+#include <utility>
 
 using std::vector;
 using std::queue;
+using std::pair;
 
 
 // transform pixel values to their differences (in situ)
@@ -27,7 +29,10 @@ vector<uint8_t> applyRLE(const vector<uint8_t> &vec);
 vector<uint8_t> revertRLE(const vector<uint8_t> &vec);
 
 // apply adaptive block RLE based on given arguments
-vector<uint8_t> applyAdaptRLE(
+// returns a pair of:
+//   bit vector - scan directions, each block has its bit
+//   vector of bytes - merge of all blocks to one vector
+pair<vector<bool>, vector<uint8_t>> applyAdaptRLE(
     const vector<uint8_t> &vec,
     uint64_t matrixWidth,
     uint64_t matrixHeight,
@@ -38,11 +43,11 @@ vector<bool> applyHuffman(const vector<uint8_t> &vec);
 // revert Huffman coding of given bit vector and expected count of bytes
 vector<uint8_t> revertHuffman(queue<bool> &vec, uint64_t byteCount);
 
-// return vector of items in the given block with selected approach
+// return vector of items in the given block with selected scan direction
 // we give block index -> it returns vector of its items
 vector<uint8_t> getBlockVector(
     const vector<uint8_t> &vec, // complete vector of data
     uint64_t matrixWidth,
     uint64_t blockSize,
     uint64_t blockIndex, // index of the block in the vector
-    bool horApproach); // horizontal or vertical approach
+    bool horScan); // horizontal or vertical scanning

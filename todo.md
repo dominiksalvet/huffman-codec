@@ -23,3 +23,4 @@
 * `[x]` width and height may not be the same
 * `[ ]` use adaptive block size/find optimal size
 * `[x]` change header -- keep one byte for flags
+* `[ ]` block size must be lower than RLE block size
