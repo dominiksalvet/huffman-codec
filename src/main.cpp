@@ -19,8 +19,6 @@
 
 using namespace std;
 
-#define RLE_BLOCK_SIZE 8
-
 const string HELP_MESSAGE =
 "USAGE:\n"
 "  huff_codec [-cma] [-w WIDTH] -i IFILE [-o OFILE]\n"
@@ -37,7 +35,7 @@ const string HELP_MESSAGE =
 
 
 // compress data based on several given options
-vector<uint8_t> compress(
+vector<uint8_t> huffCompress(
     ifstream& ifs,
     bool useDiffModel,
     bool useAdaptRLE,
@@ -64,15 +62,17 @@ vector<uint8_t> compress(
         applyDiffModel(inData);
     }
     if (useAdaptRLE) {
-        pair<vector<bool>, vector<uint8_t>> adaptRLEPair;
-        adaptRLEPair = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
-        // first create header for adaptive RLE
-        inData = createAdaptRLEHeader(
-            matrixWidth, matrixHeight, RLE_BLOCK_SIZE, get<0>(adaptRLEPair));
+        inData = applyAdaptRLE(inData, matrixWidth, matrixHeight);
 
-        // then append block data
-        vector<uint8_t> blocks = get<1>(adaptRLEPair);
-        inData.insert(inData.end(), blocks.begin(), blocks.end());
+        // pair<vector<bool>, vector<uint8_t>> adaptRLEPair;
+        // adaptRLEPair = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
+        // // first create header for adaptive RLE
+        // inData = createAdaptRLEHeader(
+        //     matrixWidth, matrixHeight, RLE_BLOCK_SIZE, get<0>(adaptRLEPair));
+
+        // // then append block data
+        // vector<uint8_t> blocks = get<1>(adaptRLEPair);
+        // inData.insert(inData.end(), blocks.begin(), blocks.end());
     }
     else {
         inData = applyRLE(inData);
@@ -96,8 +96,7 @@ vector<uint8_t> compress(
 }
 
 // decompress data of the given input stream (based on its header)
-// it respects the header format as described sooner
-vector<uint8_t> decompress(ifstream &ifs)
+vector<uint8_t> huffDecompress(ifstream &ifs)
 {
     // read total byte count to decode using Huffman
     uint64_t byteCount;
@@ -125,13 +124,18 @@ vector<uint8_t> decompress(ifstream &ifs)
     // revert appropriate transformations
     deque<uint8_t> huffDecoded = revertHuffman(inData, byteCount);
     vector<uint8_t> outData;
-    outData = revertRLE(huffDecoded);
+    // if (adaptRLEUsed) {
+    //     outData = revertAdaptRLE(huffDecoded);
+    // } else {
+        outData = revertRLE(huffDecoded);
+    // }
     if (diffModelUsed) {
         revertDiffModel(outData);
     }
 
     return outData;
 }
+
 
 // write final data from vector to given output file path
 void writeOutData(const vector<uint8_t> &vec, const string &filePath)
@@ -147,7 +151,6 @@ void writeOutData(const vector<uint8_t> &vec, const string &filePath)
     ofs.write((char *) vec.data(), vec.size());
     // ofs will be closed automatically (end of this scope)
 }
-
 
 // redirect input to stderr, but also print a help hint
 void cerrh(const char *s) {
@@ -215,9 +218,9 @@ int main(int argc, char *argv[])
     // perform required operation
     vector<uint8_t> outData; // alway array of bytes
     if (useCompr) {
-        outData = compress(ifs, useDiffModel, useAdaptRLE, matrixWidth);
+        outData = huffCompress(ifs, useDiffModel, useAdaptRLE, matrixWidth);
     } else {
-        outData = decompress(ifs);
+        outData = huffDecompress(ifs);
     }
     
     writeOutData(outData, ofp);

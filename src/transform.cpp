@@ -10,6 +10,7 @@
 #include <climits>
 
 #include "huffman.hpp"
+#include "headers.hpp"
 
 using std::cerr;
 
@@ -109,36 +110,42 @@ vector<uint8_t> revertRLE(const deque<uint8_t> &deq)
     return finalVec;
 }
 
-pair<vector<bool>, vector<uint8_t>> applyAdaptRLE(
+vector<uint8_t> applyAdaptRLE(
     const vector<uint8_t> &vec,
     uint64_t matrixWidth,
-    uint64_t matrixHeight,
-    uint64_t blockSize)
+    uint64_t matrixHeight)
 {
     vector<bool> scanDirs; // scan directions
-    vector<uint8_t> finalVec;
+    vector<uint8_t> blockData;
 
-    uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, blockSize);
+    uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
     vector<uint8_t> horVec, verVec; // horizontal, vertical order
     for (uint64_t i = 0; i < blockCount; i++)
     {
-        horVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, true));
-        verVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, false));
+        horVec = applyRLE(getBlockVector(vec, matrixWidth, RLE_BLOCK_SIZE, i, true));
+        verVec = applyRLE(getBlockVector(vec, matrixWidth, RLE_BLOCK_SIZE, i, false));
 
         // check which scan direction is better
         if (horVec.size() <= verVec.size())
         {
             scanDirs.push_back(1);
-            finalVec.insert(finalVec.end(), horVec.begin(), horVec.end());
+            blockData.insert(blockData.end(), horVec.begin(), horVec.end());
         }
         else
         {
             scanDirs.push_back(0);
-            finalVec.insert(finalVec.end(), verVec.begin(), verVec.end());
+            blockData.insert(blockData.end(), verVec.begin(), verVec.end());
         }
     }
 
-    return make_pair(scanDirs, finalVec);
+    // first create header for adaptive RLE
+    vector<uint8_t> finalVec = createAdaptRLEHeader(
+        matrixWidth, matrixHeight, RLE_BLOCK_SIZE, scanDirs);
+    
+    // then append block data
+    finalVec.insert(finalVec.end(), blockData.begin(), blockData.end());
+
+    return finalVec;
 }
 
 vector<bool> applyHuffman(const vector<uint8_t> &vec)

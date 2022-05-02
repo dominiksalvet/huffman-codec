@@ -12,7 +12,8 @@
 
 using std::deque;
 using std::vector;
-using std::pair;
+
+#define RLE_BLOCK_SIZE 8
 
 
 // transform pixel values to their differences (in situ)
@@ -27,15 +28,11 @@ vector<uint8_t> applyRLE(const vector<uint8_t> &vec);
 // recover the given RLE-encoded data
 vector<uint8_t> revertRLE(const deque<uint8_t> &deq);
 
-// apply adaptive block RLE based on given arguments
-// returns a pair of:
-//   * bit vector - scan directions, each block has its bit
-//   * vector of bytes - merge of all blocks to one vector
-pair<vector<bool>, vector<uint8_t>> applyAdaptRLE(
+// apply adaptive block RLE based on given arguments (also creates its header)
+vector<uint8_t> applyAdaptRLE(
     const vector<uint8_t> &vec,
     uint64_t matrixWidth,
-    uint64_t matrixHeight,
-    uint64_t blockSize);
+    uint64_t matrixHeight);
 
 // apply Huffman FGK coding and return bit vector
 vector<bool> applyHuffman(const vector<uint8_t> &vec);
@@ -43,10 +40,7 @@ vector<bool> applyHuffman(const vector<uint8_t> &vec);
 deque<uint8_t> revertHuffman(deque<bool> &deq, uint64_t byteCount);
 
 // returns the total number of blocks in the matrix
-uint64_t getBlockCount(
-    uint64_t matrixWidth,
-    uint64_t matrixHeight,
-    uint64_t blockSize);
+uint64_t getBlockCount(uint64_t matrixWidth, uint64_t matrixHeight, uint64_t blockSize);
 // return vector of items in the given block with selected scan direction
 // we give block index -> it returns vector of its items
 vector<uint8_t> getBlockVector(
