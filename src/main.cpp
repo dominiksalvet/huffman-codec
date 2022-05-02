@@ -55,12 +55,33 @@ void createHeader(
         // header part <8b-flags> [-x------] to indicate whether adaptive RLE was used
         uint8_t(useAdaptRLE) << 6
     );
-    // TODO: continue here
-    if (useAdaptRLE) // optional
+    if (useAdaptRLE) // optional header part
     {
         // header part <64b-matrix-width> to indicate 2D data width
         for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
             vec.push_back(matrixWidth >> (CHAR_BIT * i));
+        }
+        // header part <block-scan-dirs> to indicate scan direction for each block
+        // horizontal scan - 1, vertical scan - 0
+        uint8_t curByte = 0;
+        uint64_t bitCount = 0;
+        for (bool scanDir : scanDirs) // scan direction bits to bytes
+        {
+            curByte = (curByte << 1) | scanDir;
+            bitCount++;
+
+            if (bitCount % CHAR_BIT == 0) {
+                vec.push_back(curByte);
+            }
+        }
+        // scale to byte resolution, so adding remaining bits if needed
+        if (bitCount % CHAR_BIT != 0)
+        {
+            do {
+                curByte = (curByte << 1) | 0; // value does not matter
+                bitCount++;
+            } while (bitCount % CHAR_BIT != 0);
+            vec.push_back(curByte);
         }
     }
 }
@@ -104,6 +125,8 @@ vector<uint8_t> compress(
 
     vector<uint8_t> outData;
     // first create header (see the function comment for header format)
+    // none parts of header are compressed since the appropriate configuration use should
+    // lead to the header binary format, which is hard to be effectively compressed
     createHeader(
         outData,
         inData.size(),
@@ -112,7 +135,7 @@ vector<uint8_t> compress(
         get<0>(adaptRLEPair));
 
     // then data; convert bit vector to byte array
-    for (size_t i = 0; i < outBits.size(); i += 8) {
+    for (size_t i = 0; i < outBits.size(); i += CHAR_BIT) {
         uint8_t curByte = 0;
         for (int j = 0; j < CHAR_BIT; j++) {
             curByte = (curByte << 1) | outBits[i + j];
