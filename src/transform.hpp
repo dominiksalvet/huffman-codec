@@ -43,6 +43,11 @@ vector<bool> applyHuffman(const vector<uint8_t> &vec);
 // revert Huffman coding of given bit vector and expected count of bytes
 vector<uint8_t> revertHuffman(queue<bool> &vec, uint64_t byteCount);
 
+// returns the total number of blocks in the matrix
+uint64_t getBlockCount(
+    uint64_t matrixWidth,
+    uint64_t matrixHeight,
+    uint64_t blockSize);
 // return vector of items in the given block with selected scan direction
 // we give block index -> it returns vector of its items
 vector<uint8_t> getBlockVector(

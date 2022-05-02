@@ -121,7 +121,7 @@ pair<vector<bool>, vector<uint8_t>> applyAdaptRLE(
     vector<bool> scanDirs; // scan directions
     vector<uint8_t> finalVec;
 
-    uint64_t blockCount = (matrixWidth / blockSize) * (matrixHeight / blockSize);
+    uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, blockSize);
     vector<uint8_t> horVec, verVec; // horizontal, vertical order
     for (uint64_t i = 0; i < blockCount; i++)
     {
@@ -190,6 +190,14 @@ vector<uint8_t> revertHuffman(queue<bool> &vec, uint64_t byteCount)
 }
 
 // -------------------------- HELPER FUNCTIONS ---------------------------------
+
+uint64_t getBlockCount(
+    uint64_t matrixWidth,
+    uint64_t matrixHeight,
+    uint64_t blockSize)
+{
+    return (matrixWidth / blockSize) * (matrixHeight / blockSize);
+}
 
 vector<uint8_t> getBlockVector(
     const vector<uint8_t> &vec,
