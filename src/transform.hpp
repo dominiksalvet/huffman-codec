@@ -30,8 +30,8 @@ vector<uint8_t> revertRLE(const vector<uint8_t> &vec);
 
 // apply adaptive block RLE based on given arguments
 // returns a pair of:
-//   bit vector - scan directions, each block has its bit
-//   vector of bytes - merge of all blocks to one vector
+//   * bit vector - scan directions, each block has its bit
+//   * vector of bytes - merge of all blocks to one vector
 pair<vector<bool>, vector<uint8_t>> applyAdaptRLE(
     const vector<uint8_t> &vec,
     uint64_t matrixWidth,
