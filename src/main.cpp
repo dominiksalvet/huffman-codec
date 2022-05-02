@@ -66,7 +66,8 @@ vector<uint8_t> compress(
         pair<vector<bool>, vector<uint8_t>> adaptRLEPair;
         adaptRLEPair = applyAdaptRLE(inData, matrixWidth, matrixHeight, RLE_BLOCK_SIZE);
         // first create header for adaptive RLE
-        inData = createAdaptRLEHeader(matrixWidth, matrixHeight, get<0>(adaptRLEPair));
+        inData = createAdaptRLEHeader(
+            matrixWidth, matrixHeight, RLE_BLOCK_SIZE, get<0>(adaptRLEPair));
 
         // then append block data
         vector<uint8_t> blocks = get<1>(adaptRLEPair);
@@ -97,7 +98,7 @@ vector<uint8_t> compress(
 // it respects the header format as described sooner
 vector<uint8_t> decompress(ifstream &ifs)
 {
-    // read total byte count to decode
+    // read total byte count to decode using Huffman
     uint64_t byteCount;
     ifs.read((char *)&byteCount, sizeof(uint64_t));
     // read flags
@@ -106,7 +107,7 @@ vector<uint8_t> decompress(ifstream &ifs)
     bool adaptRLEUsed = c >> 6;
     if (c == EOF) // check if any errors during header reading
     {
-        cerr << "ERROR: invalid compressed file header\n";
+        cerr << "ERROR: invalid or missing Huffman coding header\n";
         ifs.close(); // close file handler before exit
         exit(8);
     }

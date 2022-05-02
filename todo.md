@@ -27,3 +27,5 @@
 * `[ ]` ignore matrix width when no adaptive RLE
 * `[ ]` pridat vice pruchodu??
 * `[ ]` check whether `getBlockCount()` is still required
+* `[ ]` replace insert vector with deques or list?
+* `[ ]` use appropriate data containers
