@@ -27,6 +27,6 @@
 * `[x]` check whether `getBlockCount()` is still required ==> it is
 * `[x]` use appropriate data containers
 * `[x]` hide some functions from header files
-* `[ ]` check valgrind memory leaks
+* `[x]` check valgrind memory leaks
 * `[x]` improve for loops when other direction is better (e.g., bit manip)
 * `[x]` be careful about bit assignment (e.g., bit & 0x01)
