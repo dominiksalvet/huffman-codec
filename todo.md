@@ -17,7 +17,7 @@
 * `[x]` diff model may not require 9 bits
 * `[x]` add plain RLE scanning
 * `[x]` applyRLE remove in situ property
-* `[ ]` velikost bloku nemusi byt delitelny s rozmery obrazku
+* `[x]` velikost bloku nemusi byt delitelny s rozmery obrazku
 * `[x]` oddelat nejake veci z compress a decompress funkce
 * `[x]` width and height may not be the same
 * `[x]` use adaptive block size (automatic finding the optimal one)

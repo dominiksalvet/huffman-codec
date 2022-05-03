@@ -23,34 +23,69 @@ using std::swap;
 // return the base address of the given block
 uint64_t getBlockBase(uint64_t matrixWidth, uint64_t blockSize, uint64_t blockIndex)
 {
-    uint64_t blocksInLine = matrixWidth / blockSize;
+    uint64_t blocksInLine = matrixWidth / blockSize + (matrixWidth % blockSize != 0);
     uint64_t blockColumnBase = (blockIndex % blocksInLine) * blockSize;
     uint64_t blockRowBase = (blockIndex / blocksInLine) * matrixWidth * blockSize;
 
     return blockRowBase + blockColumnBase;
 }
 
+// return the block width based on given matrix and block base address in it
+uint64_t getBlockSizeX(uint64_t matrixWidth, uint64_t blockBase, uint64_t blockSize)
+{
+    uint64_t blockBaseX = blockBase % matrixWidth;
+
+    uint64_t blockSizeX = blockSize; // initial block width
+    if (blockBaseX + blockSize > matrixWidth) { // partially out of matrix
+        blockSizeX = blockSize - (blockBaseX + blockSize - matrixWidth);
+    }
+
+    return blockSizeX;
+}
+
+// return the block width (based on given matrix); useful when on the border of matrix
+uint64_t getBlockSizeY(
+    uint64_t matrixWidth,
+    uint64_t matrixHeight,
+    uint64_t blockBase,
+    uint64_t blockSize)
+{
+    uint64_t blockBaseY = blockBase / matrixWidth;
+
+    uint64_t blockSizeY = blockSize;
+    if (blockBaseY + blockSize > matrixHeight) {
+        blockSizeY = blockSize - (blockBaseY + blockSize - matrixHeight);
+    }
+
+    return blockSizeY;
+}
+
 // return vector of items in the given block with selected scan direction
 // we give block index -> it returns vector of its items
 vector<uint8_t> getBlockVector(
-    const vector<uint8_t> &vec,
+    const vector<uint8_t> &matrix,
     uint64_t matrixWidth,
+    uint64_t matrixHeight,
     uint64_t blockSize,
     uint64_t blockIndex,
     bool horScan)
 {
     // compute block base address
     uint64_t blockBase = getBlockBase(matrixWidth, blockSize, blockIndex);
+    uint64_t blockSizeX = getBlockSizeX(matrixWidth, blockBase, blockSize);
+    uint64_t blockSizeY = getBlockSizeY(matrixWidth, matrixHeight, blockBase, blockSize);
+    
+    if (!horScan) {
+        swap(blockSizeX, blockSizeY);
+    }
 
     vector<uint8_t> blockVec;
-    for (uint64_t i = 0; i < blockSize; i++)
-    {
-        for (uint64_t j = 0; j < blockSize; j++)
-        {
-            uint64_t xIndex = horScan ? j : i;
-            uint64_t yIndex = horScan ? i : j;
+    for (uint64_t y = 0; y < blockSizeY; y++) {
+        for (uint64_t x = 0; x < blockSizeX; x++) {
+            uint64_t xIndex = horScan ? x : y;
+            uint64_t yIndex = horScan ? y : x;
 
-            blockVec.push_back(vec[blockBase + (yIndex * matrixWidth) + xIndex]);
+            blockVec.push_back(matrix[blockBase + (yIndex * matrixWidth) + xIndex]);
         }
     }
 
@@ -59,7 +94,7 @@ vector<uint8_t> getBlockVector(
 
 // apply adaptive block RLE based on given arguments (also creates its header)
 vector<uint8_t> applyAdaptRLE(
-    const vector<uint8_t> &vec,
+    const vector<uint8_t> &matrix,
     uint64_t matrixWidth,
     uint64_t matrixHeight,
     uint64_t blockSize)
@@ -71,8 +106,8 @@ vector<uint8_t> applyAdaptRLE(
     vector<uint8_t> horVec, verVec; // horizontal, vertical order
     for (uint64_t i = 0; i < blockCount; i++)
     {
-        horVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, true));
-        verVec = applyRLE(getBlockVector(vec, matrixWidth, blockSize, i, false));
+        horVec = applyRLE(getBlockVector(matrix, matrixWidth, matrixHeight, blockSize, i, true));
+        verVec = applyRLE(getBlockVector(matrix, matrixWidth, matrixHeight, blockSize, i, false));
 
         // check which scan direction is better
         if (horVec.size() <= verVec.size())
@@ -151,29 +186,30 @@ vector<uint8_t> revertRLEBlock(deque<uint8_t> &deq, uint64_t reqResultSize)
 }
 
 // insert given block vector to given target matrix vector based on given arguments
-// we given block index -> it inserts it where it should be in the final matrix
+// we give block base address -> it inserts the block to the given matrix
 void insertBlockVector(
-    vector<uint8_t> &tarVec,
+    vector<uint8_t> &matrix,
     const vector<uint8_t> &blockVec,
     uint64_t matrixWidth,
-    uint64_t blockSize,
-    uint64_t blockIndex,
+    uint64_t blockBase,
+    uint64_t blockSizeX,
+    uint64_t blockSizeY,
     bool horScan)
 {
-    // compute block base address
-    uint64_t blockBase = getBlockBase(matrixWidth, blockSize, blockIndex);
+    if (!horScan) {
+        swap(blockSizeX, blockSizeY);
+    }
 
-    for (uint64_t i = 0; i < blockSize; i++)
-    {
-        for (uint64_t j = 0; j < blockSize; j++)
-        {
+    uint64_t blockVecIndex = 0;
+    for (uint64_t y = 0; y < blockSizeY; y++) {
+        for (uint64_t x = 0; x < blockSizeX; x++) {
+            uint64_t xIndex = horScan ? x : y;
+            uint64_t yIndex = horScan ? y : x;
+
             // current matrix vector address
-            uint64_t tarVecAddr = blockBase + (i * matrixWidth) + j;
-
-            uint64_t srcX = horScan ? j : i;
-            uint64_t srcY = horScan ? i : j;
-
-            tarVec[tarVecAddr] = blockVec[(srcY * blockSize) + srcX];
+            uint64_t tarVecAddr = blockBase + (yIndex * matrixWidth) + xIndex;
+            matrix[tarVecAddr] = blockVec[blockVecIndex];
+            blockVecIndex++;
         }
     }
 }
@@ -255,7 +291,7 @@ vector<uint8_t> revertRLE(const deque<uint8_t> &deq)
 }
 
 vector<uint8_t> applyAdaptRLE(
-    const vector<uint8_t> &vec,
+    const vector<uint8_t> &matrix,
     uint64_t matrixWidth,
     uint64_t matrixHeight)
 {
@@ -269,7 +305,7 @@ vector<uint8_t> applyAdaptRLE(
     // we will find the most optimal block size
     vector<uint8_t> bestVec;
     // first step before the loop
-    bestVec = applyAdaptRLE(vec, matrixWidth, matrixHeight, curBlockSize);
+    bestVec = applyAdaptRLE(matrix, matrixWidth, matrixHeight, curBlockSize);
 
     curBlockSize *= 2;
     int doublingSteps = 1; // number of doubling block size
@@ -277,7 +313,7 @@ vector<uint8_t> applyAdaptRLE(
     while (doublingSteps <= MAX_RLE_DOUBLING_STEPS &&
            curBlockSize <= matrixWidth && curBlockSize <= matrixHeight)
     {
-        curVec = applyAdaptRLE(vec, matrixWidth, matrixHeight, curBlockSize);
+        curVec = applyAdaptRLE(matrix, matrixWidth, matrixHeight, curBlockSize);
 
         if (curVec.size() < bestVec.size()) {
             bestVec = curVec;
@@ -300,13 +336,18 @@ vector<uint8_t> revertAdaptRLE(deque<uint8_t> &deq)
     uint64_t blockSize = get<2>(adaptRLETuple);
     vector<bool> scanDirs = get<3>(adaptRLETuple);
 
-    vector<uint8_t> finalVec(matrixWidth * matrixHeight);
+    vector<uint8_t> finalMatrix(matrixWidth * matrixHeight);
     uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, blockSize);
 
     for (uint i = 0; i < blockCount; i++)
     {
-        vector<uint8_t> curBlock = revertRLEBlock(deq, blockSize * blockSize);
-        insertBlockVector(finalVec, curBlock, matrixWidth, blockSize, i, scanDirs[i]);
+        uint64_t blockBase = getBlockBase(matrixWidth, blockSize, i);
+        uint64_t blockSizeX = getBlockSizeX(matrixWidth, blockBase, blockSize);
+        uint64_t blockSizeY = getBlockSizeY(matrixWidth, matrixHeight, blockBase, blockSize);
+
+        vector<uint8_t> curBlock = revertRLEBlock(deq, blockSizeX * blockSizeY);
+        insertBlockVector(
+            finalMatrix, curBlock, matrixWidth, blockBase, blockSizeX, blockSizeY, scanDirs[i]);
     }
 
     if (!deq.empty())
@@ -315,7 +356,7 @@ vector<uint8_t> revertAdaptRLE(deque<uint8_t> &deq)
         exit(15);
     }
 
-    return finalVec;
+    return finalMatrix;
 }
 
 vector<bool> applyHuffman(const vector<uint8_t> &vec)
@@ -370,5 +411,7 @@ uint64_t getBlockCount(
     uint64_t matrixHeight,
     uint64_t blockSize)
 {
-    return (matrixWidth / blockSize) * (matrixHeight / blockSize);
+    uint64_t width = matrixWidth / blockSize + (matrixWidth % blockSize != 0);
+    uint64_t height = matrixHeight / blockSize + (matrixHeight % blockSize != 0);
+    return width * height;
 }

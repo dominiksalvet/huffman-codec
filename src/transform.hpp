@@ -32,7 +32,7 @@ vector<uint8_t> revertRLE(const deque<uint8_t> &deq);
 // apply adaptive block RLE with the best found block size (automatically)
 // it also creates its header (besides others, block size is stored there)
 vector<uint8_t> applyAdaptRLE(
-    const vector<uint8_t> &vec,
+    const vector<uint8_t> &matrix,
     uint64_t matrixWidth,
     uint64_t matrixHeight);
 // revert adaptive block RLE, it also parses its header and set up
