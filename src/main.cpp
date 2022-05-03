@@ -211,6 +211,9 @@ int main(int argc, char *argv[])
     } else {
         outData = huffDecompress(ifs);
     }
+
+    // info for better UX (may be suppressed by ignoring stderr)
+    cerr << "writing " << outData.size() << " bytes to " << ofp << "\n";
     
     writeOutData(outData, ofp);
 }
