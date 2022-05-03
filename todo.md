@@ -1,7 +1,7 @@
 # Todo
 
 * `[x]` adaptivni huffmanovo kodovani (KKO-04:51)
-* `[ ]` musi jet na merlin.fit.vutbr.cz (vysledky do dokumentace odsud)
+* `[x]` musi jet na merlin.fit.vutbr.cz (vysledky do dokumentace odsud)
 * `[x]` bud hodnota pixelu, nebo model diference sousednich pixelu (KKO-01:13)
 * `[x]` adaptivni blokova metoda skenovani - horizontalni a vertikalni (KKO-02:38)
 * `[x]` spustitelna pomoci 'huff_codec'
