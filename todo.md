@@ -12,7 +12,6 @@
 * `[ ]` dokumentace (viz zadani)
 * `[ ]` odevzdava se kko_xsalve03.zip se zdrojakama, Makefile a PDF dokumentaci
 * `[x]` pouzivani `[u]int<x>_t` datovych typu (sys/types.h)
-* `[ ]` pripadny debug valgrind (make debug target, DataDisplayDebugger)
 * `[x]` use file header when compression/decompression
 * `[x]` check supported file size limit and other limits (e.g., `freq`), check all `int`, etc.
 * `[x]` diff model may not require 9 bits
@@ -21,12 +20,13 @@
 * `[ ]` velikost bloku nemusi byt delitelny s rozmery obrazku
 * `[x]` oddelat nejake veci z compress a decompress funkce
 * `[x]` width and height may not be the same
-* `[ ]` use adaptive block size/find optimal size
+* `[x]` use adaptive block size (automatic finding the optimal one)
 * `[x]` change header -- keep one byte for flags
-* `[ ]` block size must be lower than RLE block size
+* `[x]` RLE block size must be lower than picture sizes
 * `[ ]` ignore matrix width when no adaptive RLE
-* `[ ]` pridat vice pruchodu??
-* `[ ]` check whether `getBlockCount()` is still required
-* `[ ]` replace insert vector with deques or list?
-* `[ ]` use appropriate data containers
-* `[ ]` hide some functions from header files
+* `[x]` check whether `getBlockCount()` is still required ==> it is
+* `[x]` use appropriate data containers
+* `[x]` hide some functions from header files
+* `[ ]` check valgrind memory leaks
+* `[x]` improve for loops when other direction is better (e.g., bit manip)
+* `[x]` be careful about bit assignment (e.g., bit & 0x01)

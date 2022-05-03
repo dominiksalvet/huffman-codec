@@ -93,8 +93,8 @@ vector<uint8_t> huffDecompress(ifstream &ifs)
     ifs.read((char *)&byteCount, sizeof(uint64_t));
     // read flags
     int c = ifs.get();
-    bool diffModelUsed = c >> 7;
-    bool adaptRLEUsed = c >> 6;
+    bool diffModelUsed = (uint8_t(c) >> 7) & 0x01;
+    bool adaptRLEUsed = (uint8_t(c) >> 6) & 0x01;
     if (c == EOF) // check if any errors during header reading
     {
         cerr << "ERROR: invalid or missing Huffman coding header\n";
@@ -105,8 +105,8 @@ vector<uint8_t> huffDecompress(ifstream &ifs)
     // load input file
     deque<bool> inData;
     while ((c = ifs.get()) != EOF) {
-        for (int i = 0; i < CHAR_BIT; i++) {
-            inData.push_back((c >> (CHAR_BIT - i - 1) & 0x01));
+        for (int i = CHAR_BIT; i > 0; i--) {
+            inData.push_back((c >> (i - 1)) & 0x01);
         }
     }
     ifs.close();
@@ -114,11 +114,23 @@ vector<uint8_t> huffDecompress(ifstream &ifs)
     // revert appropriate transformations
     deque<uint8_t> huffDecoded = revertHuffman(inData, byteCount);
     vector<uint8_t> outData;
-    // if (adaptRLEUsed) {
-    //     outData = revertAdaptRLE(huffDecoded);
-    // } else {
+    if (adaptRLEUsed) {
+        // outData = revertAdaptRLE(huffDecoded);
+        tuple<uint64_t, uint64_t, uint64_t, vector<bool>> myTuple;
+        myTuple = extractAdaptRLEHeader(huffDecoded);
+        cout << "matrix width: " << get<0>(myTuple) << "\n";
+        cout << "matrix height: " << get<1>(myTuple) << "\n";
+        cout << "block size: " << get<2>(myTuple) << "\n";
+        cout << "block scan directions: " << "\n";
+
+        vector<bool> bits = get<3>(myTuple);
+        for (unsigned int i = 0; i < bits.size(); i++)
+        {
+            cout << "bits[" << i << "] = " << bits[i] << "\n";
+        }
+    } else {
         outData = revertRLE(huffDecoded);
-    // }
+    }
     if (diffModelUsed) {
         revertDiffModel(outData);
     }

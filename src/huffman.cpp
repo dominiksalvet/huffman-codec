@@ -43,9 +43,9 @@ vector<bool> HuffTree::encode(uint8_t symbol)
         code = nodeToCode(nodeNYT); // we must start with NYT code
 
         // current symbol to boolean vector conversion
-        for (int i = 0; i < BITS_IN_SYMBOL; i++)
+        for (int i = BITS_IN_SYMBOL; i > 0; i--)
         {
-            bool curBit = (symbol >> (BITS_IN_SYMBOL - i - 1)) & 0x01;
+            bool curBit = (symbol >> (i - 1)) & 0x01;
             code.push_back(curBit);
         }
     }

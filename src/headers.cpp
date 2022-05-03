@@ -23,16 +23,16 @@ vector<uint8_t> createAdaptRLEHeader(
     vector<uint8_t> finalVec;
 
     // header part <64b-matrix-width> to indicate 2D data width
-    for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        finalVec.push_back(matrixWidth >> (CHAR_BIT * i));
+    for (unsigned int i = sizeof(uint64_t); i > 0; i--) {
+        finalVec.push_back(matrixWidth >> (CHAR_BIT * (i - 1)));
     }
     // header part <64b-matrix-height> to indicate 2D data height
-    for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        finalVec.push_back(matrixHeight >> (CHAR_BIT * i));
+    for (unsigned int i = sizeof(uint64_t); i > 0; i--) {
+        finalVec.push_back(matrixHeight >> (CHAR_BIT * (i - 1)));
     }
     // header part <64b-block-size> to indicate the used block size
-    for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        finalVec.push_back(blockSize >> (CHAR_BIT * i));
+    for (unsigned int i = sizeof(uint64_t); i > 0; i--) {
+        finalVec.push_back(blockSize >> (CHAR_BIT * (i - 1)));
     }
 
     // header part <block-scan-dirs> to indicate scan direction for each block
@@ -73,13 +73,13 @@ tuple<uint64_t, uint64_t, uint64_t, vector<bool>> extractAdaptRLEHeader(deque<ui
     uint64_t matrixHeight = 0;
     uint64_t blockSize = 0;
     for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        matrixWidth = (matrixWidth << 8) | deq.front(); deq.pop_front();
+        matrixWidth = (matrixWidth << CHAR_BIT) | deq.front(); deq.pop_front();
     }
     for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        matrixHeight = (matrixHeight << 8) | deq.front(); deq.pop_front();
+        matrixHeight = (matrixHeight << CHAR_BIT) | deq.front(); deq.pop_front();
     }
     for (unsigned int i = 0; i < sizeof(uint64_t); i++) {
-        blockSize = (blockSize << 8) | deq.front(); deq.pop_front();
+        blockSize = (blockSize << CHAR_BIT) | deq.front(); deq.pop_front();
     }
     uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, blockSize);
 
@@ -97,7 +97,7 @@ tuple<uint64_t, uint64_t, uint64_t, vector<bool>> extractAdaptRLEHeader(deque<ui
             }
             curByte = deq.front(); deq.pop_front();
         }
-        scanDirs.push_back(curByte >> (CHAR_BIT - (i % CHAR_BIT) - 1));
+        scanDirs.push_back((curByte >> (CHAR_BIT - (i % CHAR_BIT) - 1)) & 0x01);
     }
 
     return make_tuple(matrixWidth, matrixHeight, blockSize, scanDirs);
