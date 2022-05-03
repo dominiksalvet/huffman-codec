@@ -8,13 +8,27 @@
 
 #include <iostream>
 #include <climits>
+#include <utility>
+#include <tuple>
 
 #include "huffman.hpp"
 #include "headers.hpp"
 
 using std::cerr;
+using std::get;
+using std::swap;
 
 // -------------------------- HIDDEN HELPER FUNCTIONS ------------------------------
+
+// return the base address of the given block
+uint64_t getBlockBase(uint64_t matrixWidth, uint64_t blockSize, uint64_t blockIndex)
+{
+    uint64_t blocksInLine = matrixWidth / blockSize;
+    uint64_t blockColumnBase = (blockIndex % blocksInLine) * blockSize;
+    uint64_t blockRowBase = (blockIndex / blocksInLine) * matrixWidth * blockSize;
+
+    return blockRowBase + blockColumnBase;
+}
 
 // return vector of items in the given block with selected scan direction
 // we give block index -> it returns vector of its items
@@ -26,10 +40,7 @@ vector<uint8_t> getBlockVector(
     bool horScan)
 {
     // compute block base address
-    uint64_t blocksInLine = matrixWidth / blockSize;
-    uint64_t blockColumnBase = (blockIndex % blocksInLine) * blockSize;
-    uint64_t blockRowBase = (blockIndex / blocksInLine) * matrixWidth * blockSize;
-    uint64_t blockBase = blockRowBase + blockColumnBase;
+    uint64_t blockBase = getBlockBase(matrixWidth, blockSize, blockIndex);
 
     vector<uint8_t> blockVec;
     for (uint64_t i = 0; i < blockSize; i++)
@@ -84,6 +95,87 @@ vector<uint8_t> applyAdaptRLE(
     finalVec.insert(finalVec.end(), blockData.begin(), blockData.end());
 
     return finalVec;
+}
+
+// perform one step of decoding RLE, appending the result to target vector
+void revertRLEStep(vector<uint8_t> &tarVec, uint8_t &matchByte, int &matchCount, uint8_t curByte)
+{
+    if (matchCount == 3)
+    {
+        // unroll the encoded number of bytes
+        for (int i = 0; i < curByte; i++) {
+            tarVec.push_back(matchByte);
+        }
+        matchCount = 0;
+    }
+    else
+    {
+        tarVec.push_back(curByte);
+
+        if (matchByte == curByte) {
+            matchCount++;
+        } else
+        {
+            matchByte = curByte;
+            matchCount = 1;
+        }
+    }
+}
+
+// extract and decode one block encoded in RLE (boundaries checks included)
+vector<uint8_t> revertRLEBlock(deque<uint8_t> &deq, uint64_t reqResultSize)
+{
+    vector<uint8_t> finalVec; // new vector
+
+    uint8_t matchByte = 0;
+    int matchCount = 0;
+    while (finalVec.size() < reqResultSize)
+    {
+        if (deq.empty())
+        {
+            cerr << "ERROR: unexpected end of adaptive block RLE data\n";
+            exit(14);
+        }
+
+        uint8_t curByte = deq.front(); deq.pop_front(); // extract
+        revertRLEStep(finalVec, matchByte, matchCount, curByte); // decode
+    }
+
+    if (finalVec.size() != reqResultSize)
+    {
+        cerr << "ERROR: invalid adaptive block RLE file contents\n";
+        exit(13);
+    }
+
+    return finalVec;
+}
+
+// insert given block vector to given target matrix vector based on given arguments
+// we given block index -> it inserts it where it should be in the final matrix
+void insertBlockVector(
+    vector<uint8_t> &tarVec,
+    const vector<uint8_t> &blockVec,
+    uint64_t matrixWidth,
+    uint64_t blockSize,
+    uint64_t blockIndex,
+    bool horScan)
+{
+    // compute block base address
+    uint64_t blockBase = getBlockBase(matrixWidth, blockSize, blockIndex);
+
+    for (uint64_t i = 0; i < blockSize; i++)
+    {
+        for (uint64_t j = 0; j < blockSize; j++)
+        {
+            // current matrix vector address
+            uint64_t tarVecAddr = blockBase + (i * matrixWidth) + j;
+
+            uint64_t srcX = horScan ? j : i;
+            uint64_t srcY = horScan ? i : j;
+
+            tarVec[tarVecAddr] = blockVec[(srcY * blockSize) + srcX];
+        }
+    }
 }
 
 // -------------------------- TRANSFORMATION ---------------------------------
@@ -155,28 +247,8 @@ vector<uint8_t> revertRLE(const deque<uint8_t> &deq)
 
     uint8_t matchByte = 0;
     int matchCount = 0;
-    for (uint8_t curByte : deq)
-    {
-        if (matchCount == 3)
-        {
-            // unroll the encoded number of bytes
-            for (int i = 0; i < curByte; i++) {
-                finalVec.push_back(matchByte);
-            }
-            matchCount = 0;
-        }
-        else
-        {
-            finalVec.push_back(curByte);
-
-            if (matchByte == curByte) {
-                matchCount++;
-            } else
-            {
-                matchByte = curByte;
-                matchCount = 1;
-            }
-        }
+    for (uint8_t curByte : deq) {
+        revertRLEStep(finalVec, matchByte, matchCount, curByte);
     }
 
     return finalVec;
@@ -218,6 +290,34 @@ vector<uint8_t> applyAdaptRLE(
     return bestVec;
 }
 
+vector<uint8_t> revertAdaptRLE(deque<uint8_t> &deq)
+{
+    tuple<uint64_t, uint64_t, uint64_t, vector<bool>> adaptRLETuple;
+    adaptRLETuple = extractAdaptRLEHeader(deq);
+
+    uint64_t matrixWidth = get<0>(adaptRLETuple);
+    uint64_t matrixHeight = get<1>(adaptRLETuple);
+    uint64_t blockSize = get<2>(adaptRLETuple);
+    vector<bool> scanDirs = get<3>(adaptRLETuple);
+
+    vector<uint8_t> finalVec(matrixWidth * matrixHeight);
+    uint64_t blockCount = getBlockCount(matrixWidth, matrixHeight, blockSize);
+
+    for (uint i = 0; i < blockCount; i++)
+    {
+        vector<uint8_t> curBlock = revertRLEBlock(deq, blockSize * blockSize);
+        insertBlockVector(finalVec, curBlock, matrixWidth, blockSize, i, scanDirs[i]);
+    }
+
+    if (!deq.empty())
+    {
+        cerr << "ERROR: leftover data of adaptive block RLE detected\n";
+        exit(15);
+    }
+
+    return finalVec;
+}
+
 vector<bool> applyHuffman(const vector<uint8_t> &vec)
 {
     // create the Huffman FGK tree
@@ -251,7 +351,7 @@ deque<uint8_t> revertHuffman(deque<bool> &deq, uint64_t byteCount)
         int decResult = huffTree.decode(&deq);
         if (decResult == -1)
         {
-            cerr << "ERROR: invalid compressed file contents\n";
+            cerr << "ERROR: invalid Huffman coding file contents\n";
             exit(9);
         }
         uint8_t symbol = decResult;

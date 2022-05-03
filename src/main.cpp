@@ -11,7 +11,6 @@
 #include <climits>
 #include <vector>
 #include <deque>
-#include <utility>
 #include <cstdint>
 
 #include "transform.hpp"
@@ -57,7 +56,7 @@ vector<uint8_t> huffCompress(
     }
     uint64_t matrixHeight = inData.size() / matrixWidth;
 
-    // perform required transformations
+    // perform required TRANSFORMATIONS
     if (useDiffModel) {
         applyDiffModel(inData);
     }
@@ -111,23 +110,11 @@ vector<uint8_t> huffDecompress(ifstream &ifs)
     }
     ifs.close();
 
-    // revert appropriate transformations
+    // revert appropriate TRANSFORMATIONS
     deque<uint8_t> huffDecoded = revertHuffman(inData, byteCount);
     vector<uint8_t> outData;
     if (adaptRLEUsed) {
-        // outData = revertAdaptRLE(huffDecoded);
-        tuple<uint64_t, uint64_t, uint64_t, vector<bool>> myTuple;
-        myTuple = extractAdaptRLEHeader(huffDecoded);
-        cout << "matrix width: " << get<0>(myTuple) << "\n";
-        cout << "matrix height: " << get<1>(myTuple) << "\n";
-        cout << "block size: " << get<2>(myTuple) << "\n";
-        cout << "block scan directions: " << "\n";
-
-        vector<bool> bits = get<3>(myTuple);
-        for (unsigned int i = 0; i < bits.size(); i++)
-        {
-            cout << "bits[" << i << "] = " << bits[i] << "\n";
-        }
+        outData = revertAdaptRLE(huffDecoded);
     } else {
         outData = revertRLE(huffDecoded);
     }

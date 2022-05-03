@@ -35,6 +35,9 @@ vector<uint8_t> applyAdaptRLE(
     const vector<uint8_t> &vec,
     uint64_t matrixWidth,
     uint64_t matrixHeight);
+// revert adaptive block RLE, it also parses its header and set up
+// configuration based on it (e.g., block size)
+vector<uint8_t> revertAdaptRLE(deque<uint8_t> &deq);
 
 // apply Huffman FGK coding and return bit vector
 vector<bool> applyHuffman(const vector<uint8_t> &vec);
