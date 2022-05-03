@@ -21,10 +21,10 @@ DEC_M_DATA="dec_m_data"
 [ ! -d $DEC_M_DATA ] && mkdir $DEC_M_DATA
 
 # 2) Clean directories if necessary
-rm ${COM_DATA:?}/*
-rm ${COM_M_DATA:?}/*
-rm ${DEC_DATA:?}/*
-rm ${DEC_M_DATA:?}/*
+rm -f ${COM_DATA:?}/*
+rm -f ${COM_M_DATA:?}/*
+rm -f ${DEC_DATA:?}/*
+rm -f ${DEC_M_DATA:?}/*
 
 # 3) Run compression and decompression, measure compression time
 for DATAFILE in ${DATA_DIR}/*.raw
