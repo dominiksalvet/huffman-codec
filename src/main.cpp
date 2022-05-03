@@ -48,8 +48,8 @@ vector<uint8_t> huffCompress(
     }
     ifs.close();
 
-    // check valid matrix size
-    if ((inData.size() % matrixWidth) != 0)
+    // check valid matrix size (only when using adaptive block RLE)
+    if (useAdaptRLE && (inData.size() % matrixWidth) != 0)
     {
         cerr << "ERROR: invalid size of input 2D data detected\n";
         exit(6);

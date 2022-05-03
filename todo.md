@@ -23,7 +23,7 @@
 * `[x]` use adaptive block size (automatic finding the optimal one)
 * `[x]` change header -- keep one byte for flags
 * `[x]` RLE block size must be lower than picture sizes
-* `[ ]` ignore matrix width when no adaptive RLE
+* `[x]` ignore matrix width when no adaptive RLE
 * `[x]` check whether `getBlockCount()` is still required ==> it is
 * `[x]` use appropriate data containers
 * `[x]` hide some functions from header files

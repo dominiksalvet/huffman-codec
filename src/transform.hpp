@@ -14,7 +14,7 @@ using std::deque;
 using std::vector;
 
 #define INIT_RLE_BLOCK_SIZE 8
-#define MAX_RLE_DOUBLING_STEPS 7
+#define MAX_RLE_DOUBLING_STEPS 7 // for searching optimal block size
 
 
 // transform pixel values to their differences (in situ)
