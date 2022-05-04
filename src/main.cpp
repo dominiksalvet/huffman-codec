@@ -20,14 +20,15 @@ using namespace std;
 
 const string HELP_MESSAGE =
 "USAGE:\n"
-"  huff_codec [-cma] [-w WIDTH] -i IFILE [-o OFILE]\n"
+"  huff_codec [-cm] -i IFILE [-o OFILE]\n"
+"  huff_codec [-cm] -a [-w WIDTH] -i IFILE [-o OFILE]\n"
 "  huff_codec -d -i IFILE [-o OFILE] | -h\n"
 "\n"
 "OPTION:\n"
 "  -c/-d  perform compression/decompression\n"
 "  -m     use differential model for preprocessing\n"
 "  -a     use adaptive block RLE (default: RLE)\n"
-"  -w     width of 2D data (default: 512, disable: 1)\n"
+"  -w     width of 2D data (default: 512)\n"
 "  -i     input file path\n"
 "  -o     output file path (default: b.out)\n"
 "  -h     show this help\n";

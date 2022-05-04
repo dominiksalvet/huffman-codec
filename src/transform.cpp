@@ -106,6 +106,7 @@ vector<uint8_t> applyAdaptRLE(
     vector<uint8_t> horVec, verVec; // horizontal, vertical order
     for (uint64_t i = 0; i < blockCount; i++)
     {
+        // TODO: prepare block base here so that it is not calculated twice in the functions below
         horVec = applyRLE(getBlockVector(matrix, matrixWidth, matrixHeight, blockSize, i, true));
         verVec = applyRLE(getBlockVector(matrix, matrixWidth, matrixHeight, blockSize, i, false));
 

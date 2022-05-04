@@ -9,8 +9,8 @@
 * `[x]` huffman implementace FGK nebo Vitter
 * `[x]` komentare, kde jsou potreba
 * `[x]` zdrojove soubory hlavicka - jmeno, prijmeni, login, datum vytvoreni, nazev, summary
-* `[ ]` dokumentace (viz zadani)
-* `[ ]` odevzdava se kko_xsalve03.zip se zdrojakama, Makefile a PDF dokumentaci
+* `[x]` dokumentace (viz zadani)
+* `[x]` odevzdava se kko_xsalve03.zip se zdrojakama, Makefile a PDF dokumentaci
 * `[x]` pouzivani `[u]int<x>_t` datovych typu (sys/types.h)
 * `[x]` use file header when compression/decompression
 * `[x]` check supported file size limit and other limits (e.g., `freq`), check all `int`, etc.
@@ -30,3 +30,4 @@
 * `[x]` check valgrind memory leaks
 * `[x]` improve for loops when other direction is better (e.g., bit manip)
 * `[x]` be careful about bit assignment (e.g., bit & 0x01)
+* `[x]` modify help message (`-a` on its own line)
