@@ -1,8 +1,9 @@
-// author: Dominik Salvet
-// login: xsalve03
-// date: 2022-04-26
-// filename: transform.cpp
-// summary: Implementation of data transforming helper functions.
+//------------------------------------------------------------------------------
+// Copyright 2022 Dominik Salvet
+// https://github.com/dominiksalvet/huffman-codec
+//------------------------------------------------------------------------------
+// Implementation of data transforming helper functions.
+//------------------------------------------------------------------------------
 
 #include "transform.hpp"
 

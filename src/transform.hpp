@@ -1,8 +1,9 @@
-// author: Dominik Salvet
-// login: xsalve03
-// date: 2022-04-26
-// filename: transform.hpp
-// summary: Header file of data transforming helper functions.
+//------------------------------------------------------------------------------
+// Copyright 2022 Dominik Salvet
+// https://github.com/dominiksalvet/huffman-codec
+//------------------------------------------------------------------------------
+// Header file of data transforming helper functions.
+//------------------------------------------------------------------------------
 
 #pragma once
 

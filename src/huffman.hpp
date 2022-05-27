@@ -1,8 +1,9 @@
-// author: Dominik Salvet
-// login: xsalve03
-// date: 2022-04-20
-// filename: huffman.hpp
-// summary: Header file for Huffman FGK tree and helper functions.
+//------------------------------------------------------------------------------
+// Copyright 2022 Dominik Salvet
+// https://github.com/dominiksalvet/huffman-codec
+//------------------------------------------------------------------------------
+// Header file for Huffman FGK tree and helper functions.
+//------------------------------------------------------------------------------
 
 #pragma once
 

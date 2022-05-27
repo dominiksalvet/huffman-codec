@@ -1,9 +1,10 @@
-// author: Dominik Salvet
-// login: xsalve03
-// date: 2022-04-20
-// filename: main.cpp
-// summary: Adaptive Huffman codec with multiple options. It works with any file,
-//          having extra features for 2D data (e.g., 8-bit grayscale images).
+//------------------------------------------------------------------------------
+// Copyright 2022 Dominik Salvet
+// https://github.com/dominiksalvet/huffman-codec
+//------------------------------------------------------------------------------
+// Adaptive Huffman codec with multiple options. It works with any file, having
+// extra features for 2D data (e.g., 8-bit grayscale images).
+//------------------------------------------------------------------------------
 
 #include <iostream>
 #include <unistd.h>

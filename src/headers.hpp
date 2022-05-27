@@ -1,8 +1,9 @@
-// author: Dominik Salvet
-// login: xsalve03
-// date: 2022-05-02
-// filename: headers.hpp
-// summary: Header file of functions working with compressed file headers.
+//------------------------------------------------------------------------------
+// Copyright 2022 Dominik Salvet
+// https://github.com/dominiksalvet/huffman-codec
+//------------------------------------------------------------------------------
+// Header file of functions working with compressed file headers.
+//------------------------------------------------------------------------------
 
 #pragma once
 
