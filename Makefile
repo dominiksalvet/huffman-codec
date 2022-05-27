@@ -14,10 +14,10 @@ HEADER_FILES = $(SRC_DIR)/huffman.hpp\
                $(SRC_DIR)/transform.hpp\
                $(SRC_DIR)/headers.hpp
 
-all: huff_codec
+all: huffman-codec
 
-huff_codec: $(SRC_FILES) $(HEADER_FILES)
+huffman-codec: $(SRC_FILES) $(HEADER_FILES)
 	g++ -Wall -o $@ $(SRC_FILES)
 
 clean:
-	rm -f huff_codec b.out huff raw
+	rm -f huffman-codec b.out huff raw

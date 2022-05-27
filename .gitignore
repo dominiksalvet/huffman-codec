@@ -1,9 +1,4 @@
-huff_codec
+huffman-codec
 b.out
-.vscode/
 huff
 raw
-com_data/
-com_m_data/
-dec_data/
-dec_m_data/

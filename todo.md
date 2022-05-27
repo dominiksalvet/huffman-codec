@@ -4,7 +4,7 @@
 * `[x]` musi jet na merlin.fit.vutbr.cz (vysledky do dokumentace odsud)
 * `[x]` bud hodnota pixelu, nebo model diference sousednich pixelu (KKO-01:13)
 * `[x]` adaptivni blokova metoda skenovani - horizontalni a vertikalni (KKO-02:38)
-* `[x]` spustitelna pomoci 'huff_codec'
+* `[x]` spustitelna pomoci 'huffman-codec'
 * `[x]` prepinace a options (getopt v unistd.h)
 * `[x]` huffman implementace FGK nebo Vitter
 * `[x]` komentare, kde jsou potreba

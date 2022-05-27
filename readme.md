@@ -1,15 +1,16 @@
 # Huffman Coding Documentation
 
-This program called `huff_codec` performs adaptive Huffman encoding and decoding of given files. It is a lossless compression method, and its main target within this assignment are `RAW` grayscale images, yet it may be used with any type of file. Our implementation contains some features, which may improve Huffman coding efficiency in general. It also has features to boost compression factors for data with matrix characteristics (which images have). When compressing, these additional features, together with the Huffman encoding itself, are executed one by one in pipeline. When uncompressing, we proceed in the reversed order.
+This program called `huffman-codec` performs adaptive Huffman encoding and decoding of given files. It is a lossless compression method, and its main target within this assignment are `RAW` grayscale images, yet it may be used with any type of file. Our implementation contains some features, which may improve Huffman coding efficiency in general. It also has features to boost compression factors for data with matrix characteristics (which images have). When compressing, these additional features, together with the Huffman encoding itself, are executed one by one in pipeline. When uncompressing, we proceed in the reversed order.
 
 ## Implementation Details
 
-First, the program parses command line arguments. To be as user-frienly as possible, many are optional. See the `huff_codec -h` output below.
+First, the program parses command line arguments. To be as user-frienly as possible, many are optional. See the `huffman-codec -h` output below.
 
 ```
 USAGE:
-  huff_codec [-cma] [-w WIDTH] -i IFILE [-o OFILE]
-  huff_codec -d -i IFILE [-o OFILE] | -h
+  huffman-codec [-cm] -i IFILE [-o OFILE]
+  huffman-codec [-cm] -a [-w WIDTH] -i IFILE [-o OFILE]
+  huffman-codec -d -i IFILE [-o OFILE] | -h
 
 OPTION:
   -c/-d  perform compression/decompression
@@ -59,7 +60,7 @@ When decompressing, we also need to know total bytes to decode. So, there is als
 
 ## Compilation
 
-A `Makefile` is provided for easier compilation of the program. Use `make` in the root directory to compile it. The final binary will be created as `huff_codec` and it is prepared to be used (see help above). Also, `make clean` is supported for cleaning temporary files.
+A `Makefile` is provided for easier compilation of the program. Use `make` in the root directory to compile it. The final binary will be created as `huffman-codec` and it is prepared to be used (see help above). Also, `make clean` is supported for cleaning temporary files.
 
 ## Measured Performance
 

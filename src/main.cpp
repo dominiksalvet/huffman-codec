@@ -21,9 +21,9 @@ using namespace std;
 
 const string HELP_MESSAGE =
 "USAGE:\n"
-"  huff_codec [-cm] -i IFILE [-o OFILE]\n"
-"  huff_codec [-cm] -a [-w WIDTH] -i IFILE [-o OFILE]\n"
-"  huff_codec -d -i IFILE [-o OFILE] | -h\n"
+"  huffman-codec [-cm] -i IFILE [-o OFILE]\n"
+"  huffman-codec [-cm] -a [-w WIDTH] -i IFILE [-o OFILE]\n"
+"  huffman-codec -d -i IFILE [-o OFILE] | -h\n"
 "\n"
 "OPTION:\n"
 "  -c/-d  perform compression/decompression\n"
@@ -145,7 +145,7 @@ void writeOutData(const vector<uint8_t> &vec, const string &filePath)
 
 // redirect input to stderr, but also print a help hint
 void cerrh(const char *s) {
-    cerr << s << "try 'huff_codec -h' for more information\n";
+    cerr << s << "try 'huffman-codec -h' for more information\n";
 }
 
 // entry point of program
