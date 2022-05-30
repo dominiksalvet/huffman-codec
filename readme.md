@@ -1,4 +1,4 @@
-# Huffman Coding Documentation
+# Huffman Codec (coder/decoder)
 
 This program called `huffman-codec` performs adaptive Huffman encoding and decoding of given files. It is a lossless compression method, and its main target within this assignment are `RAW` grayscale images, yet it may be used with any type of file. This implementation contains some features, which may improve Huffman coding efficiency in general. It also has features to boost compression factors for data with matrix characteristics (which images have). When compressing, these additional features, together with the Huffman encoding itself, are executed one by one in pipeline. When uncompressing, we proceed in the reversed order.
 
