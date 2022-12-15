@@ -58,7 +58,7 @@ This is the main part of the program. All previous methods can be consider prepr
 
 As this method is adaptive, the Huffman tree is built during compression as well as during decompression (they build identical tree). For this approach, the FGK algorithm is used.
 
-When decompressing, we also need to know total bytes to decode. So, there is also a Huffman header added into the stream. It has the following format" `<64b-byte-count><8b-flags>`. Flags include information whether differential mode and adaptive RLE were used, so that the program knows that when decompressing a file.
+When decompressing, we also need to know total bytes to decode. So, there is also a Huffman header added into the stream. It has the following format: `<64b-byte-count><8b-flags>`. Flags include information whether differential mode and adaptive RLE were used, so that the program knows that when decompressing a file.
 
 ## Compilation
 
